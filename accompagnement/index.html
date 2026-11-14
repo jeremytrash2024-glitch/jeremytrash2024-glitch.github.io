@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accompagnement Modal — Section rythmique</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0e0c14">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0c14; --panel:#1a1626; --line:rgba(255,255,255,.08);
+  --gold:#f0c040; --purple:#b080ff; --teal:#40e0c0; --pink:#ff6b9d; --blue:#4fc3f7;
+  --txt:#e8e2f4; --dim:#9089a8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#1c1730,#0a0810 70%);color:var(--txt);
+  font-family:'Courier Prime',monospace;padding:14px;min-height:100vh}
+h1,h2{font-family:'Playfair Display',serif;margin:0 0 10px}
+h1{font-size:1.35rem;color:var(--gold);letter-spacing:.5px}
+h2{font-size:1rem;color:var(--purple);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:6px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.app{max-width:1180px;margin:0 auto}
+header{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:14px;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+header .sub{color:var(--dim);font-size:.72rem;flex-basis:100%}
+select,input[type=range]{background:#241f36;color:var(--txt);border:1px solid var(--line);border-radius:8px;
+  padding:6px 8px;font-family:inherit;font-size:.85rem;max-width:100%}
+label{font-size:.8rem;color:var(--dim);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.small-btn{background:#241f36;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+  font-family:inherit;font-size:.75rem;cursor:pointer}
+.small-btn:hover{border-color:var(--purple)}
+
+/* Bibliothèque */
+.lib-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+.lib-desc{color:var(--dim);font-size:.72rem;line-height:1.5;margin-top:4px}
+.lib-desc b{color:var(--teal)}
+
+/* Grille d'accords en cours */
+.prog-chords{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:6px;margin-top:8px}
+.pchord{background:#211c33;border:1px solid var(--line);border-radius:9px;padding:6px;text-align:center;transition:.15s}
+.pchord.now{border-color:var(--gold);box-shadow:0 0 12px rgba(240,192,64,.45);background:#2c2440}
+.pchord .sym{color:var(--gold);font-size:.9rem;font-weight:700;font-family:'Playfair Display',serif}
+.pchord .beats{color:var(--dim);font-size:.55rem}
+.pchord .guide{color:var(--teal);font-size:.55rem;margin-top:2px;font-style:italic;line-height:1.3}
+
+/* Diagramme d'accord : SVG à coordonnées exactes (points posés sur les cordes) */
+.chord-diagram{margin:5px auto 2px;display:flex;flex-direction:column;align-items:center}
+.cd-fret{font-size:.62rem;font-weight:700;color:#fff;letter-spacing:.3px;margin-bottom:2px}
+.cd-svg{display:block}
+
+/* Panneau lecture collé en bas : les contrôles ne bougent jamais */
+.player-sticky{position:sticky;bottom:6px;z-index:30;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
+.player-sticky h2{margin-bottom:6px}
+.player-sticky .player-row{margin-bottom:5px}
+.mini-btn{background:#2a2540;color:#fff;border:1px solid #453b66;border-radius:6px;width:1.9em;height:1.9em;font-size:1rem;cursor:pointer;vertical-align:middle;margin:0 2px}
+.mini-btn:active{background:#3a3358}
+.pchord .deg{font-size:.62rem;letter-spacing:.1em;color:var(--teal);opacity:.85;text-align:center;font-weight:700;min-height:1em}
+.mes-item{padding:8px;border:1px solid #35304f;border-radius:8px;margin-bottom:6px}
+.mes-actions{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap}
+.mes-actions button,.mes-new,.ed-add,.ed-cancel{background:#2a2540;color:#fff;border:1px solid #453b66;border-radius:6px;padding:5px 10px;cursor:pointer}
+.ed-save{color:#fff;border:1px solid #2a9a52;border-radius:6px;padding:5px 10px;cursor:pointer}
+.ed-field{display:block;margin-bottom:8px;font-size:.9rem}
+.ed-field input,.ed-field select{background:#1c1830;color:#fff;border:1px solid #3a3358;border-radius:6px;padding:6px;width:100%;max-width:280px}
+.ed-chord{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px;padding:6px;border:1px solid #2f2a47;border-radius:8px}
+.ed-chord input{background:#1c1830;color:#fff;border:1px solid #3a3358;border-radius:5px;padding:4px}
+.ed-cn{flex:1;min-width:5em}
+.ed-voic,.ed-del{background:#332c52;color:#fff;border:1px solid #4a4170;border-radius:6px;padding:4px 8px;cursor:pointer}
+.fp-title{font-weight:600;margin-bottom:6px;font-size:.9rem}
+.fp-row{display:flex;align-items:center;gap:6px;margin:3px 0}
+.fp-lab{min-width:5.5em;font-size:.78rem;opacity:.8}
+.fp-lane{display:flex;gap:3px;overflow-x:auto;padding-bottom:2px}
+.fp-b{min-width:1.9em;height:1.9em;background:#241f3a;color:#fff;border:1px solid #3a3358;border-radius:5px;cursor:pointer;flex:0 0 auto}
+.fp-b.on{background:var(--teal);color:#08210f;font-weight:700;border-color:var(--teal)}
+.fp-live{margin:8px 0;color:var(--teal);font-size:.9rem}
+#fpPlay,#fpDone{background:#2a2540;color:#fff;border:1px solid #453b66;border-radius:6px;padding:5px 12px;cursor:pointer;margin-right:6px}
+.player-sticky.playing .player-row,.player-sticky.playing .mutes{display:none}
+.player-sticky.playing h2{margin-bottom:2px}
+.player-sticky.playing .now-playing{font-size:.98rem;margin-top:2px;font-weight:600}
+
+/* Player */
+.player-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
+.mutes{gap:6px !important}
+.mutes label{background:#211c33;padding:3px 7px;border-radius:8px;font-size:.74rem;white-space:nowrap}
+.toggle-btn{font-family:'Playfair Display',serif;font-weight:700;font-size:.85rem;border:none;border-radius:9px;
+  padding:5px 16px;cursor:pointer;background:#2e7d4f;color:#eafff2;transition:background .15s}
+.toggle-btn.playing{background:#a33045;color:#ffe8ee}
+.now-playing{color:var(--teal);font-size:.85rem;min-height:1.3em;margin-top:4px}
+
+/* Modale starter */
+#starterModal{position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);
+  z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+#starterModal.open{display:flex}
+.sm-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:720px;width:100%;
+  padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.sm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sm-head h2{border:none;padding:0;margin:0;font-size:1.15rem;color:var(--gold)}
+.sm-close{background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;line-height:1}
+.sm-sub{color:var(--dim);font-size:.72rem;margin-bottom:12px}
+.sm-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.sm-tab{background:#241f36;color:var(--txt);border:1px solid var(--line);border-radius:20px;padding:6px 14px;
+  font-family:inherit;font-size:.78rem;cursor:pointer}
+.sm-tab.active{background:var(--gold);color:#0a0810;border-color:var(--gold);font-weight:700}
+.sm-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.sm-card{background:#211c33;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;transition:.15s}
+.sm-card:hover{border-color:var(--gold);transform:translateY(-1px)}
+.sm-card .n{color:var(--gold);font-weight:700;font-size:.85rem;font-family:'Playfair Display',serif}
+.sm-card .meta{color:var(--dim);font-size:.62rem;margin-top:3px}
+.sm-card .d{color:var(--txt);font-size:.66rem;margin-top:5px;line-height:1.4;opacity:.85}
+.sm-card .go{color:var(--teal);font-size:.68rem;margin-top:6px}
+
+/* Options / manche / clavier (masqués par défaut) */
+#optionsPanel .opt-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:6px}
+#fretPanel,#pianoPanel{display:none}
+#fretPanel.shown,#pianoPanel.shown{display:block}
+#fretboard{overflow-x:auto}
+.fb-grid{display:grid;grid-template-columns:30px repeat(13,minmax(36px,1fr));gap:2px;min-width:540px}
+.fb-cell{height:32px;display:flex;align-items:center;justify-content:center;font-size:.66rem;border-radius:6px;position:relative}
+.fb-str-label{color:var(--dim);font-size:.68rem}
+.fb-fret-head{color:var(--dim);font-size:.62rem;text-align:center}
+.fb-slot{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.fb-slot::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.08);z-index:0}
+.fb-note{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.6rem;color:#0a0810;z-index:1;transition:transform .15s,box-shadow .15s}
+.fb-note.active-pulse{transform:scale(1.3);box-shadow:0 0 12px 3px currentColor}
+.fb-marker{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.14);z-index:0;pointer-events:none}
+.fb-open-sep{border-right:2px solid rgba(255,255,255,.18)}
+#pianoKeys{position:relative;height:112px;width:100%;min-width:480px;overflow-x:auto}
+.pk-white{position:absolute;top:0;height:112px;width:30px;background:#e9e4f2;border:1px solid #2a2438;border-radius:0 0 5px 5px;cursor:pointer}
+.pk-black{position:absolute;top:0;height:68px;width:20px;background:#141024;border:1px solid #000;border-radius:0 0 4px 4px;z-index:2;cursor:pointer}
+::-webkit-scrollbar{height:8px}
+::-webkit-scrollbar-thumb{background:#332b4a;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎼 Accompagnement — Section rythmique</h1>
+    <span class="sub">Progressions de Guitar Modes &amp; Modal Morpher · piano · guitare · basse · batterie</span>
+    <button class="small-btn" id="starterOpen">🚀 Starter</button>
+    <button class="small-btn" id="metalOpen">🤘 Metal &amp; Punk</button>
+    <button class="small-btn" id="funkOpen">🕶️ Funk</button>
+    <button class="small-btn" id="billyOpen">🕺 Rockabilly</button>
+    <button class="small-btn" id="reggaeOpen">🌿 Reggae</button>
+    <button class="small-btn" id="jazzOpen">🎷 Jazz</button>
+    <button class="small-btn" id="mesGrillesOpen">✏️ Mes grilles</button>
+  </header>
+
+  <div id="starterModal">
+    <div class="sm-box">
+      <div class="sm-head">
+        <h2>🚀 Choisis un accompagnement</h2>
+        <button class="sm-close" id="starterClose">✕</button>
+      </div>
+      <div class="sm-sub">Trié par niveau. Un clic charge la progression et lance la lecture direct.</div>
+      <div class="sm-tabs">
+        <button class="sm-tab active" data-level="1">🌱 Débutant</button>
+        <button class="sm-tab" data-level="2">🌿 Intermédiaire</button>
+        <button class="sm-tab" data-level="3">🌳 Confirmé</button>
+        <button class="sm-tab" data-level="4">🔥 Avancé</button>
+        <button class="sm-tab" data-level="5">👑 Maître</button>
+      </div>
+      <div class="sm-list" id="starterList"></div>
+    </div>
+  </div>
+
+  <div id="metalModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head">
+        <h2>🤘 Metal &amp; Punk</h2>
+        <button class="sm-close" id="metalClose">✕</button>
+      </div>
+      <div class="sm-sub">Son de chug du module Djent de Guitar Modes. Un clic charge et joue.</div>
+      <div class="sm-tabs" id="metalTabs"></div>
+      <div class="sm-list" id="metalList"></div>
+    </div>
+  </div>
+
+  <div id="funkModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>🕶️ Funk</h2><button class="sm-close" id="funkClose">✕</button></div>
+      <div class="sm-sub">Scratche 16e avec ghost notes, le One, basse en octaves. Un clic charge et joue.</div>
+      <div class="sm-tabs" id="funkTabs"></div>
+      <div class="sm-list" id="funkList"></div>
+    </div>
+  </div>
+
+  <div id="billyModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>🕺 Rockabilly &amp; Psychobilly</h2><button class="sm-close" id="billyClose">✕</button></div>
+      <div class="sm-sub">Boogie sur cordes graves, train beat brossé, basse slappée. Un clic charge et joue.</div>
+      <div class="sm-tabs" id="billyTabs"></div>
+      <div class="sm-list" id="billyList"></div>
+    </div>
+  </div>
+
+  <div id="reggaeModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>🌿 Reggae, Ska &amp; Dub</h2><button class="sm-close" id="reggaeClose">✕</button></div>
+      <div class="sm-sub">Skank sur les contretemps, one drop, bubble d'orgue. Un clic charge et joue.</div>
+      <div class="sm-tabs" id="reggaeTabs"></div>
+      <div class="sm-list" id="reggaeList"></div>
+    </div>
+  </div>
+
+  <div id="jazzModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>🎷 Jazz</h2><button class="sm-close" id="jazzClose">✕</button></div>
+      <div class="sm-sub">Standards, modal, bossa/latin et fusion. Voicings mélangés (shells, drop-2, quartal). Un clic charge et joue.</div>
+      <div class="sm-tabs" id="jazzTabs"></div>
+      <div class="sm-list" id="jazzList"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Bibliothèque de progressions</h2>
+    <div class="lib-row">
+      <label>Style <select id="styleFilter"></select></label>
+      <label>Progression <select id="progSelect"></select></label>
+      <label id="morpherRootWrap" style="display:none">Tonique <select id="morpherRoot"></select></label>
+    </div>
+    <div class="lib-desc" id="progDesc"></div>
+    <div class="lib-row" style="margin-top:8px">
+      <button class="small-btn" id="exportTxt">⬇ Exporter en texte</button>
+      <button class="small-btn" id="exportDiag">⬇ Exporter avec diagrammes</button>
+    </div>
+    <div class="prog-chords" id="progChords"></div>
+  </div>
+
+  <div id="mesModal" style="position:fixed;inset:0;background:rgba(8,6,14,.82);backdrop-filter:blur(3px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>✏️ Mes grilles</h2><button class="sm-close" id="mesClose">✕</button></div>
+      <div class="sm-sub">Crée, duplique et modifie tes propres progressions. Sauvegardées sur cet appareil.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="mes-new" id="mesNew">➕ Nouvelle grille</button>
+        <button class="mes-new" id="mesDup">⧉ Dupliquer la grille en cours</button>
+      </div>
+      <div id="mesList"></div>
+    </div>
+  </div>
+
+  <div id="editModal" style="position:fixed;inset:0;background:rgba(8,6,14,.86);backdrop-filter:blur(3px);z-index:61;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+    <div class="sm-box">
+      <div class="sm-head"><h2>Éditer la grille</h2><button class="sm-close" id="edClose">✕</button></div>
+      <label class="ed-field">Nom<br><input id="edName"></label>
+      <label class="ed-field">Tempo (bpm)<br><input id="edTempo" type="number" min="40" max="240"></label>
+      <label class="ed-field">Groove<br><select id="edGroove"></select></label>
+      <div style="font-weight:600;margin:8px 0 4px">Accords</div>
+      <div id="editChords"></div>
+      <button class="ed-add" id="edAddChord">➕ Ajouter un accord</button>
+      <div id="fretPicker" style="display:none;margin-top:10px;padding:10px;border:1px solid #3a3358;border-radius:10px;background:#161226"></div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="ed-save" id="edSave" style="background:#1f7a3a">💾 Enregistrer</button>
+        <button class="ed-cancel" id="edCancel">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel player-sticky">
+    <h2>Lecture <button id="toggleBtn" class="toggle-btn">▶ Lecture</button></h2>
+    <div class="player-row">
+      <label>Groove <select id="grooveSelect"></select></label>
+      <label id="chugWrap" style="display:none">Chug <select id="chugSelect"></select></label>
+      <label>Tempo <input type="range" id="bpmRange" min="50" max="200" value="96"><span id="bpmVal">96</span> bpm</label>
+      <label>Tonalité <select id="tonaliteSel"></select></label>
+    </div>
+    <div class="player-row mutes">
+      <label><input type="checkbox" id="onDrums" checked> 🥁</label>
+      <label><input type="checkbox" id="onBass" checked> 🎸 Basse</label>
+      <label><input type="checkbox" id="onGuitar" checked> 🎸 Guit.</label>
+      <label><input type="checkbox" id="onPiano" checked> 🎹 Piano</label>
+    </div>
+    <div id="nowPlaying" class="now-playing"></div>
+  </div>
+
+  <div class="panel" id="optionsPanel">
+    <h2>Options</h2>
+    <div class="opt-row">
+      <button class="small-btn" id="fretToggle">🎸 Afficher le manche</button>
+      <button class="small-btn" id="pianoToggle">🎹 Afficher le clavier (aperçu sonore)</button>
+    </div>
+    <div id="fretPanel">
+      <div class="lib-row" style="margin-top:8px">
+        <label>Tonique <select id="rootSel"></select></label>
+        <label>Famille <select id="familySel"></select></label>
+        <label>Mode <select id="modeSel"></select></label>
+      </div>
+      <div id="fretboard"></div>
+    </div>
+    <div id="pianoPanel"><div id="pianoKeys"></div></div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('error',function(e){
+  const box=document.createElement('div');
+  box.style.cssText='background:#3a1414;color:#ff8080;padding:12px;margin:10px 0;border-radius:10px;font-size:12px;white-space:pre-wrap';
+  box.textContent='ERREUR JS : '+e.message+' (ligne '+e.lineno+')';
+  document.body.insertBefore(box, document.body.firstChild);
+});
+
+/* ============================================================
+   1. THÉORIE (reprise de guitar-modal-morpher) — pour le manche optionnel
+   ============================================================ */
+const NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const SCALES={
+  major:{name:"Majeur",modes:[
+    {name:"Ionien (Majeur)",formula:[0,2,4,5,7,9,11],intervals:["R","2","3","4","5","6","7"]},
+    {name:"Dorien",formula:[0,2,3,5,7,9,10],intervals:["R","2","b3","4","5","6","b7"]},
+    {name:"Phrygien",formula:[0,1,3,5,7,8,10],intervals:["R","b2","b3","4","5","b6","b7"]},
+    {name:"Lydien",formula:[0,2,4,6,7,9,11],intervals:["R","2","3","#4","5","6","7"]},
+    {name:"Mixolydien",formula:[0,2,4,5,7,9,10],intervals:["R","2","3","4","5","6","b7"]},
+    {name:"Éolien (Mineur nat.)",formula:[0,2,3,5,7,8,10],intervals:["R","2","b3","4","5","b6","b7"]},
+    {name:"Locrien",formula:[0,1,3,5,6,8,10],intervals:["R","b2","b3","4","b5","b6","b7"]}
+  ]},
+  melodicMinor:{name:"Mineur mélodique",modes:[
+    {name:"Mineur mélodique",formula:[0,2,3,5,7,9,11],intervals:["R","2","b3","4","5","6","7"]},
+    {name:"Dorien b2",formula:[0,1,3,5,7,9,10],intervals:["R","b2","b3","4","5","6","b7"]},
+    {name:"Lydien augmenté",formula:[0,2,4,6,8,9,11],intervals:["R","2","3","#4","#5","6","7"]},
+    {name:"Lydien dominant",formula:[0,2,4,6,7,9,10],intervals:["R","2","3","#4","5","6","b7"]},
+    {name:"Mixolydien b6",formula:[0,2,4,5,7,8,10],intervals:["R","2","3","4","5","b6","b7"]},
+    {name:"Locrien #2",formula:[0,2,3,5,6,8,10],intervals:["R","2","b3","4","b5","b6","b7"]},
+    {name:"Superlocrien (Altéré)",formula:[0,1,3,4,6,8,10],intervals:["R","b2","b3","b4","b5","b6","b7"]}
+  ]},
+  harmonicMinor:{name:"Mineur harmonique",modes:[
+    {name:"Mineure harmonique",formula:[0,2,3,5,7,8,11],intervals:["R","2","b3","4","5","b6","7"]},
+    {name:"Locrien #6",formula:[0,1,3,5,6,9,10],intervals:["R","b2","b3","4","b5","6","b7"]},
+    {name:"Ionien #5",formula:[0,2,4,6,7,9,11],intervals:["R","2","3","#4","#5","6","7"]},
+    {name:"Dorien #4 (Ukrainien)",formula:[0,2,3,6,7,9,10],intervals:["R","2","b3","#4","5","6","b7"]},
+    {name:"Phrygien dominant",formula:[0,1,4,5,7,8,10],intervals:["R","b2","3","4","5","b6","b7"]},
+    {name:"Lydien #2",formula:[0,3,4,6,7,9,11],intervals:["R","#2","3","#4","5","6","7"]},
+    {name:"Ultralocrien",formula:[0,1,3,4,6,8,9],intervals:["R","b2","b3","b4","b5","b6","bb7"]}
+  ]},
+  doubleHarmonic:{name:"Double Harmonique",modes:[
+    {name:"Double harmonique (Byzantin)",formula:[0,1,4,5,7,8,11],intervals:["R","b2","3","4","5","b6","7"]},
+    {name:"Lydien #2 #6",formula:[0,3,4,6,7,10,11],intervals:["R","#2","3","#4","5","#6","7"]},
+    {name:"Ultraphrygien",formula:[0,1,3,4,7,8,9],intervals:["R","b2","b3","b4","5","b6","bb7"]},
+    {name:"Mineur hongrois",formula:[0,2,3,6,7,8,11],intervals:["R","2","b3","#4","5","b6","7"]},
+    {name:"Oriental",formula:[0,1,4,5,6,9,10],intervals:["R","b2","3","4","b5","6","b7"]},
+    {name:"Ionien #2 #5",formula:[0,3,4,5,8,9,11],intervals:["R","#2","3","4","#5","6","7"]},
+    {name:"Locrien bb3 bb7",formula:[0,1,2,5,6,8,9],intervals:["R","b2","bb3","4","b5","b6","bb7"]}
+  ]},
+  symmetric:{name:"Symétriques",modes:[
+    {name:"Diminuée ½-1 (dominante)",formula:[0,1,3,4,6,7,9,10],intervals:["R","b2","b3","3","#4","5","6","b7"]},
+    {name:"Diminuée 1-½",formula:[0,2,3,5,6,8,9,11],intervals:["R","2","b3","4","b5","b6","6","7"]},
+    {name:"Par tons (whole tone)",formula:[0,2,4,6,8,10],intervals:["R","2","3","#4","#5","b7"]}
+  ]},
+  harmonicMajor:{name:"Majeur harmonique",modes:[
+    {name:"Majeure harmonique",formula:[0,2,4,5,7,8,11],intervals:["R","2","3","4","5","b6","7"]},
+    {name:"Dorien b5",formula:[0,2,3,5,6,9,10],intervals:["R","2","b3","4","b5","6","b7"]},
+    {name:"Phrygien b4",formula:[0,1,3,4,7,8,10],intervals:["R","b2","b3","b4","5","b6","b7"]},
+    {name:"Lydien b3",formula:[0,2,3,6,7,9,11],intervals:["R","2","b3","#4","5","6","7"]},
+    {name:"Mixolydien b2",formula:[0,1,4,5,7,9,10],intervals:["R","b2","3","4","5","6","b7"]},
+    {name:"Lydien augmenté #2",formula:[0,3,4,6,8,9,11],intervals:["R","#2","3","#4","#5","6","7"]},
+    {name:"Locrien bb7",formula:[0,1,3,5,6,8,9],intervals:["R","b2","b3","4","b5","b6","bb7"]}
+  ]}
+};
+const INTERVAL_COLORS={
+  R:"#f0c040",b2:"#ff6b6b",2:"#8ab4ff","#2":"#ff9d4d",
+  b3:"#7ec8ff",3:"#4fc3f7",bb3:"#ff9d4d",
+  4:"#9089a8","#4":"#ff9d4d",b4:"#ff9d4d",
+  b5:"#ff6b9d",5:"#40e0c0","#5":"#ff9d4d",
+  b6:"#b080ff",6:"#c9a0ff","#6":"#ff9d4d",
+  bb7:"#ff6b9d",b7:"#ff8fa8",7:"#ffc3d6"
+};
+function intervalColor(lbl){return INTERVAL_COLORS[lbl]||"#9089a8";}
+
+/* ============================================================
+   2. BIBLIOTHÈQUE — 63 progressions importées de Guitar Modes
+   (injectée plus bas : PROGRESSIONS_DATA)
+   ============================================================ */
+const PROGRESSIONS=[{"id":"clusters-tendus","name":"Clusters tendus","style":"fusion","tempo":80,"feel":"rubato / atmosphérique","difficulty":3,"description":"Voicings denses et volontairement dissonants. Des clusters qui frottent — couleurs tendues à explorer, pas des accords sages. Joue-les lentement, laisse sonner.","chords":[{"name":"C#m7","beats":4,"voicing":"9-10-10-10-11-x","bassGuide":"Cluster grave sur Do#. Laisse les cordes frotter."},{"name":"Cmaj7","beats":4,"voicing":"8-x-9-9-8-8","bassGuide":"Basse Do, tension interne."},{"name":"Fm7","beats":4,"voicing":"x-8-10-8-9-8","bassGuide":"Basse Fa."},{"name":"Fmaj7","beats":4,"voicing":"x-8-7-5-5-5","bassGuide":"Basse Fa, plus ouvert."},{"name":"Bm7","beats":4,"voicing":"7-8-7-8-9-x","bassGuide":"Basse Si."},{"name":"A#m7","beats":4,"voicing":"6-x-7-7-6-5","bassGuide":"Basse La#."},{"name":"Bm7","beats":4,"voicing":"7-x-6-7-8-6","bassGuide":"Variante du Si, voicing différent."},{"name":"Cm7","beats":4,"voicing":"8-x-7-7-8-8","bassGuide":"Basse Do."},{"name":"G#maj7","beats":4,"voicing":"4-4-4-5-6-4","bassGuide":"Cluster en barré bas, résolution relative."}]},{"id":"funk-dorian-groove","name":"Dorian Groove","style":"funk","tempo":96,"feel":"16th-note groove","difficulty":1,"description":"Le groove funk de base. Am7 statique, beaucoup de répétition, place pour les ornements.","chords":[{"name":"Am9","beats":8,"voicing":"X-0-2-0-1-0","bassGuide":"Pédale sur La (A). Ghost notes sur le \"e\" de 2 et 4. Octave A-A."},{"name":"D9","beats":8,"voicing":"X-5-4-5-5-5","bassGuide":"Descente chromatique D→C#→C sur le temps fort. Groove avec le \"and\" du 2."}]},{"id":"funk-minor-iii-vi","name":"Minor III-VI Funk","style":"funk","tempo":104,"feel":"16th-note syncopé","difficulty":2,"description":"Mouvement III-VI en mineur. Classique Earth Wind & Fire / Herbie Hancock.","chords":[{"name":"Cm9","beats":4,"voicing":"X-3-5-3-4-3","bassGuide":"Ancre sur Do. Appoggiature chromatique Db→C en anticipation du temps."},{"name":"Fm9","beats":4,"voicing":"X-8-10-8-9-8","bassGuide":"Descente F→Eb→D avant le retour. Ligne de basse mélodique."},{"name":"Bbmaj9","beats":4,"voicing":"X-1-0-2-3-1","bassGuide":"Passage. Bb plein, puis marche vers Cm en 8ths."},{"name":"Cm9","beats":4,"voicing":"X-3-5-3-4-3","bassGuide":"Retour. Ghost notes avant le 1 pour créer l'anticipation."}]},{"id":"funk-chromatic-descent","name":"Descente Chromatique Fusion","style":"funk","tempo":112,"feel":"Half-time shuffle","difficulty":3,"description":"Descente chromatique de dominantes. Jaco / Brecker territory. Riche harmoniquement.","chords":[{"name":"E9#11","beats":4,"voicing":"X-7-6-7-7-X","bassGuide":"E grave + walking chromatique vers Eb. Jouer le #11 (A#) en appoggiature."},{"name":"Eb9#11","beats":4,"voicing":"X-6-5-6-6-X","bassGuide":"Descente d'un demi-ton. Même pattern de basse transposé."},{"name":"D9","beats":4,"voicing":"X-5-4-5-5-5","bassGuide":"Résolution partielle. Basse en walking D→C#→C#→B."},{"name":"Db9#11","beats":4,"voicing":"X-4-3-4-4-X","bassGuide":"Tension maximale avant résolution. Sub de G7. Tenir jusqu'au bout."}]},{"id":"jazz-ii-v-i-major","jazzSub":"standards","name":"II-V-I Majeur","style":"jazz","tempo":120,"feel":"Swing","difficulty":1,"description":"La progression jazz fondamentale. Maîtriser celle-ci avant tout le reste.","chords":[{"name":"Dm7","beats":4,"voicing":"X-X-0-2-1-1","bassGuide":"D sur le temps 1. Walking vers G : D→E→F→F#."},{"name":"G7","beats":4,"voicing":"3-2-0-0-0-1","bassGuide":"G sur le temps 1. Approche chromatique du C : G→Ab→A→B→C."},{"name":"Cmaj7","beats":8,"voicing":"X-3-2-0-0-0","bassGuide":"Résolution. C plein sur le 1. Jouer la 5te (G) à l'octave pour la plénitude."}]},{"id":"jazz-rhythm-changes","jazzSub":"standards","name":"Rhythm Changes (A)","style":"jazz","tempo":150,"feel":"Fast Swing","difficulty":2,"description":"Section A des Rhythm Changes (I Got Rhythm). Bebop essentiel.","chords":[{"name":"Bb6","beats":2,"voicing":"X-1-3-3-3-1","bassGuide":"Bb → G en croches. Préparer le II-V."},{"name":"G7","beats":2,"voicing":"X-X-5-4-3-3","bassGuide":"G chromatique vers C. Tritone sub : Db7 possible."},{"name":"Cm7","beats":2,"voicing":"X-3-5-5-4-3","bassGuide":"C → F en walking. Anticiper le F7."},{"name":"F7","beats":2,"voicing":"X-X-3-5-4-5","bassGuide":"Dominante principale. F → Bb résolution. Appoggiature Gb→F."},{"name":"Bb6","beats":2,"voicing":"X-1-3-3-3-1","bassGuide":"Résolution. Bb → G walking."},{"name":"Bdim7","beats":2,"voicing":"X-2-3-4-3-2","bassGuide":"Passage chromatique. B → C en demi-tons. Court !"},{"name":"Cm7","beats":2,"voicing":"X-3-5-5-4-3","bassGuide":"II avant F7 final. C → F en 4 croches."},{"name":"F7","beats":2,"voicing":"X-X-3-5-4-5","bassGuide":"Dernière dominante. Tritone sub Cb7/B7 pour variation."}]},{"id":"jazz-minor-ii-v-i","jazzSub":"standards","name":"II-V-I Mineur","style":"jazz","tempo":110,"feel":"Swing latin","difficulty":2,"description":"Le II-V-I en mineur. Attention aux gammes : Locrien pour le IIø, Altéré pour le V.","chords":[{"name":"Bø7","beats":4,"voicing":"X-2-3-2-3-2","bassGuide":"B → E walking. B-C#-D-E pour rejoindre E7alt."},{"name":"E7alt","beats":4,"voicing":"X-7-6-7-8-X","bassGuide":"E statique ou E→Bb (tritone). Laisser les tensions sonner."},{"name":"Am(maj7)","beats":8,"voicing":"X-0-2-2-1-0","bassGuide":"Résolution sur Am. A grave, puis arpège ascendant A-C-E-G#."}]},{"id":"jazz-coltrane-changes","jazzSub":"standards","name":"Coltrane Changes (Giant Steps)","style":"jazz","tempo":160,"feel":"Fast Swing / Post-bop","difficulty":4,"description":"Les Giant Steps de Coltrane. 3 centres tonaux séparés de tierces majeures. Le sommet du bebop moderne.","chords":[{"name":"Bmaj7","beats":2,"voicing":"X-2-1-3-0-2","bassGuide":"B racine. Walking B→D→E→G#."},{"name":"D7","beats":2,"voicing":"X-5-4-5-6-5","bassGuide":"D→G mouvement de quarte. Anticiper Gmaj7."},{"name":"Gmaj7","beats":2,"voicing":"3-2-0-0-0-2","bassGuide":"G racine. Walking G→A→Bb→B."},{"name":"Bb7","beats":2,"voicing":"X-1-3-1-3-1","bassGuide":"Bb→Eb. Mouvement de quarte. Tritone sub : E7."},{"name":"Ebmaj7","beats":4,"voicing":"x-6-5-3-3-3","bassGuide":"Eb racine, plein. Walking Eb→F→F#→G#."},{"name":"Am7","beats":2,"voicing":"X-0-2-0-1-0","bassGuide":"A→D walking pour D7."},{"name":"D7","beats":2,"voicing":"X-5-4-5-6-5","bassGuide":"D→G résolution finale."},{"name":"Gmaj7","beats":2,"voicing":"3-2-0-0-0-2","bassGuide":"Résolution finale. G grave + arpège montant."}]},{"id":"fusion-modal-groove","jazzSub":"modal","name":"Modal Groove (Miles)","style":"fusion","tempo":88,"feel":"Groove modal / Kind of Blue","difficulty":2,"description":"Deux accords modaux. L'improvisation prime sur l'harmonie. Pensez gammes, pas accords.","chords":[{"name":"Dm7","beats":16,"voicing":"X-X-0-2-1-1","bassGuide":"Pédale sur D. Laisser respirer. Syncopes légères, pas de walking."},{"name":"Ebmaj7","beats":8,"voicing":"X-6-5-7-8-6","bassGuide":"Montée un demi-ton. Eb grave, long. Créer la surprise harmonique."}]},{"id":"fusion-hendrix-chord","name":"Hendrix / Funk-Rock","style":"fusion","tempo":92,"feel":"Funk-rock / Riff groovy","difficulty":2,"description":"E7#9 \"le Hendrix chord\" + mouvement. Pentatonique mineure + bleues + Mixolydien.","chords":[{"name":"E7#9","beats":8,"voicing":"0-2-0-1-3-0","bassGuide":"E pédale grave. Ghost notes rythmiques. Pas besoin de bouger."},{"name":"A9","beats":4,"voicing":"X-0-2-0-2-0","bassGuide":"A pédale ou mouvement A→G→E (descente blues)."},{"name":"B7","beats":4,"voicing":"X-2-4-2-4-2","bassGuide":"Dominante bluesy. B→A→G→E descente. Turnaround vers E."}]},{"id":"beatles-bVII-mixo","name":"♭VII emprunté (Mixolydien)","style":"beatles","tempo":120,"feel":"Rock pop — straight 8","difficulty":1,"description":"Le ♭VII (ici G en tonalité de A) emprunté au mode mixolydien : sonorité rock lumineuse, très Beatles (« A Hard Day's Night », « Paperback Writer »). Le G n'appartient pas à A majeu","chords":[{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"Pédale A bien ancrée, c'est le centre tonal."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"Le ♭VII : basse sur G. Sensation de « recul » lumineux, pas de tension de dominante."},{"name":"D","beats":4,"voicing":"X-X-0-2-3-2","bassGuide":"IV majeur classique. D→A en cadence plagale possible."},{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"Retour à la maison. Boucle ♭VII↔I très addictive."}]},{"id":"beatles-iv-minor","name":"iv mineur emprunté (plagal mineur)","style":"beatles","tempo":84,"feel":"Ballade — doux, nostalgique","difficulty":2,"description":"Le IV qui devient iv mineur (D→Dm en tonalité de A) : le mouvement le plus « larme à l'œil » des Beatles (« In My Life », « If I Fell »). Le passage F#→F♮ dans la voix interne est ","chords":[{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"Tonique stable."},{"name":"D","beats":4,"voicing":"X-X-0-2-3-2","bassGuide":"IV majeur : contient F# (tierce). Garde cette note en oreille."},{"name":"Dm","beats":4,"voicing":"X-X-0-2-3-1","bassGuide":"iv MINEUR emprunté : la tierce descend F#→F♮. C'est LE son. Basse reste sur D."},{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"Résolution apaisée. Le F♮ retombe sur E ou C#."}]},{"id":"beatles-chromatic-bass","name":"Ligne de basse chromatique","style":"beatles","tempo":76,"feel":"Ballade — voix de basse mobile","difficulty":3,"description":"Une fondamentale tenue pendant que la basse descend chromatiquement (« Something », « Michelle », « Dear Prudence »). On garde C en haut, la basse fait C→B→B♭→A. Chaque accord est ","chords":[{"name":"C","beats":4,"voicing":"X-3-2-0-1-0","bassGuide":"Basse sur C. Point de départ, tout est consonant."},{"name":"C/B","beats":4,"voicing":"X-2-2-0-1-0","bassGuide":"Même accord, basse descend sur B. Premier pas chromatique (≈ Cmaj7 renversé)."},{"name":"C/B♭","beats":4,"voicing":"X-1-2-0-1-0","bassGuide":"Basse sur B♭ : l'accord devient un C7 (dominante). Tension qui pousse vers F."},{"name":"F/A","beats":4,"voicing":"X-0-3-2-1-1","bassGuide":"Basse sur A : arrivée sur F (IV) en 1er renversement. La descente C-B-B♭-A est complète."}]},{"id":"beatles-secondary-dom","name":"Dominante secondaire (V/ii)","style":"beatles","tempo":116,"feel":"Pop — entraînant","difficulty":2,"description":"L'accord vi qui devient VI majeur (A7 en tonalité de C), une dominante secondaire qui tire vers Dm/ii. Le C#, étranger à Do majeur, crée le frisson typique des refrains Beatles.","chords":[{"name":"C","beats":4,"voicing":"X-3-2-0-1-0","bassGuide":"I bien posé."},{"name":"A7","beats":4,"voicing":"X-0-2-0-2-0","bassGuide":"V/ii : au lieu de Am, on joue A7. Le C# (tierce) est la note hors-tonalité. Tire vers Dm."},{"name":"Dm","beats":4,"voicing":"X-X-0-2-3-1","bassGuide":"ii mineur, cible du A7. La résolution C#→D est satisfaisante."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"V de retour : ii-V vers C. Boucle pop parfaite."}]},{"id":"beatles-bVI-bVII","name":"♭VI – ♭VII – I (cadence Aeolienne)","style":"beatles","tempo":100,"feel":"Rock épique — montée","difficulty":2,"description":"La montée ♭VI→♭VII→I (F→G→A en tonalité de A), empruntée au mineur, finit en majeur : effet héroïque/triomphal (« With A Little Help From My Friends », fins de morceaux). Deux acco","chords":[{"name":"F","beats":4,"voicing":"1-3-3-2-1-1","bassGuide":"♭VI emprunté à La mineur. Basse F. Sombre, puissant."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"♭VII : un cran plus haut. La montée F→G crée l'élan."},{"name":"A","beats":8,"voicing":"X-0-2-2-2-0","bassGuide":"Arrivée TRIOMPHALE en majeur. Le contraste mineur→majeur fait tout l'effet. Tiens-le longtemps."}]},{"id":"beatles-aeolian-vamp","name":"Vamp i – ♭VII – ♭VI (descente)","style":"beatles","tempo":92,"feel":"Mineur — hypnotique","difficulty":1,"description":"La descente Am→G→F (i-♭VII-♭VI en La mineur) : un vamp modal sombre et hypnotique de la période psychédélique (« I Am The Walrus », « Dear Prudence » côté modal). Pure Aeolien, jus","chords":[{"name":"Am","beats":4,"voicing":"X-0-2-2-1-0","bassGuide":"Centre tonal mineur. Pédale A."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"♭VII : descente naturelle. Pas de tension, juste de la couleur modale."},{"name":"F","beats":4,"voicing":"1-3-3-2-1-1","bassGuide":"♭VI : le point le plus bas/sombre. La basse a fait A→G→F."},{"name":"E","beats":4,"voicing":"0-2-2-1-0-0","bassGuide":"Ici on emprunte la sensible : E majeur (V de A mineur) ramène vers Am. G#→A."}]},{"id":"beatles-picardy","name":"Tierce de Picardie (surprise majeure)","style":"beatles","tempo":88,"feel":"Ballade — résolution lumineuse","difficulty":2,"description":"Finir une section mineure sur un accord MAJEUR inattendu : Am–F–G puis surprise A majeur au lieu de Am (« A Day In The Life », « Strawberry Fields Forever » fin de section). Le C# ","chords":[{"name":"Am","beats":4,"voicing":"X-0-2-2-1-0","bassGuide":"Centre mineur établi."},{"name":"F","beats":4,"voicing":"1-3-3-2-1-1","bassGuide":"♭VI, on reste bien dans le mineur."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"♭VII, tension qui monte vers la résolution."},{"name":"A","beats":8,"voicing":"X-0-2-2-2-0","bassGuide":"SURPRISE : A MAJEUR au lieu de Am. Le C# surgit — lumière soudaine après l'obscurité."}]},{"id":"beatles-I-V-bVII-IV","name":"I – V – ♭VII – IV (la boucle rock)","style":"beatles","tempo":76,"feel":"Rock lent — anthémique","difficulty":1,"description":"La boucle I–V–♭VII–IV (A–E–G–D en La) : un classique de la fin des Beatles et de tout le rock anthémique. Tous les accords empruntés à La Mixolydien, ça tourne indéfiniment sans ré","chords":[{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"I — tonique. Basse ancrée sur A."},{"name":"E","beats":4,"voicing":"0-2-2-1-0-0","bassGuide":"V — diatonique. Donne une légère résolution vers A."},{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":"♭VII emprunté — décroche du diatonique. Basse sur G."},{"name":"D","beats":4,"voicing":"X-X-0-2-3-2","bassGuide":"IV — retourne vers A naturellement. La boucle repart."}]},{"id":"beatles-neapolitan","name":"♭II napolitain (accord napolitain)","style":"beatles","tempo":72,"feel":"Classique – romantique, très coloré","difficulty":3,"description":"Le ♭II (B♭ en La majeur) — accord napolitain : complètement étranger à la tonalité, couleur très « classique / baroque ». Les Beatles l'utilisent dans leurs arrangements orchestrau","chords":[{"name":"A","beats":4,"voicing":"X-0-2-2-2-0","bassGuide":"Tonique bien posée."},{"name":"Dm","beats":4,"voicing":"X-X-0-2-3-1","bassGuide":"iv mineur — préparation au napolitain. Assombrit l'ambiance."},{"name":"B♭","beats":4,"voicing":"X-1-3-3-3-1","bassGuide":"♭II NAPOLITAIN — B♭ dans une tonalité de La : complètement hors champ. Effet très « classique »."},{"name":"E","beats":4,"voicing":"0-2-2-1-0-0","bassGuide":"V : résolution vers A. Le trajet B♭→E (quinte diminuée) est le plus tendu possible."}]},{"id":"lyd-basse-desc","name":"Lydian — basse descendante","style":"lydien","tempo":76,"feel":"Neo-soul · Jazz fusion","difficulty":3,"description":"Basse chromatique descendante. Voicings 4 cordes du milieu (A-D-G-B).","chords":[{"name":"Fmaj9","beats":4,"voicing":"X-8-7-9-8-X","bassGuide":"A=8, D=7, G=9, B=8"},{"name":"G/F","beats":4,"voicing":"X-8-9-7-8-X","bassGuide":"A=8, D=9, G=7, B=8"},{"name":"Em7","beats":4,"voicing":"X-7-9-7-8-X","bassGuide":"A=7, D=9, G=7, B=8"},{"name":"Dm9","beats":4,"voicing":"X-5-3-5-5-X","bassGuide":"A=5, D=3, G=5, B=5"}]},{"id":"lyd-tension-11","name":"Lydian — tension ♯11","style":"lydien","tempo":80,"feel":"Jazz fusion · Metheny","difficulty":3,"description":"F#11 ouvre la couleur lydienne. Voicings 4 cordes du milieu (A-D-G-B).","chords":[{"name":"F#11","beats":4,"voicing":"X-9-9-9-10-X","bassGuide":"A=9, D=9, G=9, B=10"},{"name":"Em7","beats":4,"voicing":"X-7-9-7-8-X","bassGuide":"A=7, D=9, G=7, B=8"},{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3, D=5, G=4, B=5"},{"name":"Bm7","beats":4,"voicing":"X-2-4-2-3-X","bassGuide":"A=2, D=4, G=2, B=3"}]},{"id":"lyd-pedale","name":"Lydian — pédale modale","style":"lydien","tempo":72,"feel":"Drone modal · Atmosphérique","difficulty":3,"description":"Pédale de basse sur E. Voicings 4 cordes du milieu (A-D-G-B).","chords":[{"name":"Emaj9","beats":4,"voicing":"X-7-6-8-7-X","bassGuide":"A=7, D=6, G=8, B=7"},{"name":"F#/E","beats":4,"voicing":"X-7-8-6-7-X","bassGuide":"A=7, D=8, G=6, B=7"},{"name":"C#m9","beats":4,"voicing":"X-4-2-4-4-X","bassGuide":"A=4, D=2, G=4, B=4"},{"name":"Bm7","beats":4,"voicing":"X-2-4-2-3-X","bassGuide":"A=2, D=4, G=2, B=3"}]},{"id":"live-fusion-am","jazzSub":"fusion","name":"FUSION Am","style":"live","tempo":90,"feel":"groove fusion · modal · plein de couleurs","difficulty":3,"description":"8 accords qui couvrent dorien, lydien, mixolydien, phrygien dominant. Une palette complète pour une nuit fusion.","chords":[{"name":"Am9","beats":4,"voicing":"x-0-2-0-1-3","bassGuide":""},{"name":"Cmaj7#11","beats":4,"voicing":"x-3-2-2-1-0","bassGuide":""},{"name":"Dm9","beats":4,"voicing":"x-5-3-5-5-x","bassGuide":""},{"name":"G13","beats":4,"voicing":"3-2-3-0-0-3","bassGuide":""},{"name":"Fmaj7","beats":4,"voicing":"x-x-3-2-1-0","bassGuide":""},{"name":"D13","beats":4,"voicing":"x-x-0-2-1-2","bassGuide":""},{"name":"Esus4","beats":4,"voicing":"0-2-2-2-0-0","bassGuide":""},{"name":"Aadd9","beats":4,"voicing":"x-0-2-4-2-0","bassGuide":""}]},{"id":"live-autumn-em","name":"AUTUMN Em","style":"live","tempo":80,"feel":"jazz · harmonique mineure · automnal","difficulty":3,"description":"Automne en mineur harmonique. Du dorien au phrygien dominant, avec un B7b9 qui résout magnifiquement sur Em.","chords":[{"name":"Am7","beats":4,"voicing":"x-0-2-0-1-0","bassGuide":""},{"name":"D9","beats":4,"voicing":"x-x-0-2-1-2","bassGuide":""},{"name":"Gmaj7","beats":4,"voicing":"3-2-0-0-0-2","bassGuide":""},{"name":"Cmaj7","beats":4,"voicing":"x-3-2-0-0-0","bassGuide":""},{"name":"F#m7b5","beats":4,"voicing":"x-x-4-2-1-2","bassGuide":""},{"name":"B7b9","beats":4,"voicing":"x-2-1-2-0-2","bassGuide":""},{"name":"Em7","beats":4,"voicing":"0-2-0-0-0-0","bassGuide":""},{"name":"E7b9","beats":4,"voicing":"0-2-0-1-3-0","bassGuide":""}]},{"id":"live-with-you-e","name":"WITH YOU E","style":"live","tempo":75,"feel":"lydien · ouvert · planant","difficulty":2,"description":"E Lydien dans toute sa lumière. Accords ouverts, cordes à vide, résonance naturelle. Planant.","chords":[{"name":"E5","beats":4,"voicing":"0-2-2-x-x-x","bassGuide":""},{"name":"Emaj7","beats":4,"voicing":"0-2-1-1-0-x","bassGuide":""},{"name":"Aadd9","beats":4,"voicing":"x-0-2-4-2-0","bassGuide":""},{"name":"Badd11","beats":4,"voicing":"x-2-4-4-0-0","bassGuide":""},{"name":"C#m7","beats":4,"voicing":"x-4-2-1-2-0","bassGuide":""},{"name":"F#m7","beats":4,"voicing":"x-x-4-2-2-2","bassGuide":""},{"name":"Esus2","beats":4,"voicing":"0-2-4-4-0-0","bassGuide":""},{"name":"C#madd9","beats":4,"voicing":"x-4-2-1-4-x","bassGuide":""}]},{"id":"live-chill-d","name":"CHILL D","style":"live","tempo":70,"feel":"chill · D lydien · groove doux","difficulty":2,"description":"D Lydien et son monde. Atmosphère chill, accords riches, ça respire.","chords":[{"name":"Dmaj7","beats":4,"voicing":"x-x-0-2-2-2","bassGuide":""},{"name":"Bm11","beats":4,"voicing":"x-2-4-2-3-2","bassGuide":""},{"name":"Em7","beats":4,"voicing":"0-2-2-0-3-0","bassGuide":""},{"name":"A7","beats":4,"voicing":"x-0-2-0-2-0","bassGuide":""},{"name":"Gmaj7","beats":4,"voicing":"3-2-0-0-0-2","bassGuide":""},{"name":"F#m7","beats":4,"voicing":"x-x-4-2-2-2","bassGuide":""},{"name":"Bm7","beats":4,"voicing":"x-2-4-2-3-x","bassGuide":""},{"name":"A7sus4","beats":4,"voicing":"x-0-2-0-3-0","bassGuide":""}]},{"id":"live-neo-soul-a","name":"NEO-SOUL A","style":"live","tempo":85,"feel":"neo-soul · A lydien · harmonies riches","difficulty":3,"description":"Neo-soul en A. Lydien, mineur mélodique, accords de 9e et 11e. Couleurs R&B sophistiquées.","chords":[{"name":"Amaj7","beats":4,"voicing":"x-0-2-1-2-0","bassGuide":""},{"name":"G#7#5","beats":4,"voicing":"x-x-1-1-1-4","bassGuide":""},{"name":"C#m9","beats":4,"voicing":"x-4-2-1-2-0","bassGuide":""},{"name":"Am11","beats":4,"voicing":"x-0-2-0-1-3","bassGuide":""},{"name":"C#m7","beats":4,"voicing":"x-4-6-4-5-4","bassGuide":""},{"name":"Esus2","beats":4,"voicing":"0-2-4-4-0-0","bassGuide":""},{"name":"Badd11","beats":4,"voicing":"x-2-4-4-0-0","bassGuide":""},{"name":"F#m11","beats":4,"voicing":"x-x-4-2-2-2","bassGuide":""}]},{"id":"live-pop-g","name":"POP G","style":"live","tempo":95,"feel":"pop · G ionien · accords ouverts","difficulty":1,"description":"Pop en G majeur. Accords ouverts naturels, facile à jouer, ça sonne immédiatement. Parfait pour des séquences pop ou folk.","chords":[{"name":"G","beats":4,"voicing":"3-2-0-0-0-3","bassGuide":""},{"name":"Dsus4/F#","beats":4,"voicing":"2-3-2-0-x-2","bassGuide":""},{"name":"Em7","beats":4,"voicing":"0-2-2-0-3-0","bassGuide":""},{"name":"Cadd9","beats":4,"voicing":"x-3-2-0-3-0","bassGuide":""},{"name":"Am7","beats":4,"voicing":"x-0-2-0-1-0","bassGuide":""},{"name":"Dsus4","beats":4,"voicing":"x-x-0-2-3-3","bassGuide":""},{"name":"Bm7","beats":4,"voicing":"x-2-4-2-3-2","bassGuide":""},{"name":"G6/9","beats":4,"voicing":"3-0-0-0-0-2","bassGuide":""}]},{"id":"funk-vamp-bm7-e9","name":"Vamp Funk minimaliste","style":"funk","tempo":96,"feel":"16th-note groove · Dorien","difficulty":2,"description":"Tension rythmique maximale, mouvement minimal. Deux accords haut de manche sur A-D-G-B.","chords":[{"name":"Bm7","beats":4,"voicing":"X-14-16-14-15-X","bassGuide":"A=14, D=16, G=14, B=15 — Index barré 14"},{"name":"E9/B","beats":4,"voicing":"X-14-14-13-14-X","bassGuide":"A=14, D=14, G=13, B=14 — Basse B tenue"}]},{"id":"jazz-ii-v-i-vi-alt","jazzSub":"standards","name":"Anatomie Jazz — ii-V-I-VI altéré","style":"jazz","tempo":120,"feel":"Swing · Bebop","difficulty":4,"description":"La cellule reine du jazz. Tensions b9 pour des résolutions d’une fluidité absolue. Cordes A-D-G-B.","chords":[{"name":"Am7","beats":4,"voicing":"X-12-14-12-13-X","bassGuide":"A=12, D=14, G=12, B=13 — IIm7"},{"name":"D7b9","beats":4,"voicing":"X-12-13-11-13-X","bassGuide":"A=12, D=13, G=11, B=13 — V7b9 : tension max"},{"name":"Gmaj7","beats":4,"voicing":"X-10-12-11-12-X","bassGuide":"A=10, D=12, G=11, B=12 — I résolution"},{"name":"E7b9","beats":4,"voicing":"X-11-12-10-12-X","bassGuide":"A=11, D=12, G=10, B=12 — VI7b9 : relance"}]},{"id":"prog-rock-metal-melancholy","name":"Prog — Atmosphère Progressive","style":"fusion","tempo":68,"feel":"Rock progressif · Metal atmosphérique","difficulty":3,"description":"Extensions add9, maj7#11, 6/9, sus4. Dramatique et spatial, son clair ou gros gain. Cordes A-D-G-B.","chords":[{"name":"Em(add9)","beats":4,"voicing":"X-10-9-9-7-X","bassGuide":"A=10, D=9, G=9, B=7 — Im add9 : espace (doigté resserré)"},{"name":"Cmaj7#11","beats":4,"voicing":"X-3-4-4-5-X","bassGuide":"A=3, D=4, G=4, B=5 — bVImaj7#11 : couleur lydienne"},{"name":"D6/9","beats":4,"voicing":"X-5-4-4-5-X","bassGuide":"A=5, D=4, G=4, B=5 — bVII 6/9 : ouverture"},{"name":"B7sus4","beats":4,"voicing":"X-2-4-2-5-X","bassGuide":"A=2, D=4, G=2, B=5 — V7sus4 : suspension vers retour"}]},{"id":"blues-hendrix-vamp","name":"Blues-Rock — Vamp style Hendrix","style":"blues","tempo":88,"feel":"Blues-Rock · Overdrive","difficulty":2,"description":"E7#9 et accords de 9e. Idéal avec léger overdrive. Cordes A-D-G-B.","chords":[{"name":"E7#9","beats":4,"voicing":"X-7-6-7-8-X","bassGuide":"A=7, D=6, G=7, B=8 — accord Hendrix"},{"name":"A9","beats":4,"voicing":"X-5-4-5-5-X","bassGuide":"A=5, D=4, G=5, B=5 — IV9"},{"name":"C9","beats":4,"voicing":"X-3-2-3-3-X","bassGuide":"A=3, D=2, G=3, B=3 — bVI9"},{"name":"B7#9","beats":4,"voicing":"X-2-1-2-3-X","bassGuide":"A=2, D=1, G=2, B=3 — V7#9 : retour tendu"}]},{"id":"soul-classic-ballad","name":"Soul — Descente classique I-I7-IV-iv","style":"blues","tempo":64,"feel":"R&B · Stax · Mélancolique","difficulty":2,"description":"Pédale de basse tenue, mouvement de voix interne mélancolique. G → G7 → C/G → Cm/G. Cordes A-D-G-B.","chords":[{"name":"G/D","beats":4,"voicing":"X-10-9-7-8-X","bassGuide":"A=10, D=9, G=7, B=8 — I pédale Sol"},{"name":"G7","beats":4,"voicing":"X-10-9-10-8-X","bassGuide":"A=10, D=9, G=10, B=8 — I7 : la 7e introduit la couleur blues"},{"name":"C/G","beats":4,"voicing":"X-10-10-9-8-X","bassGuide":"A=10, D=10, G=9, B=8 — IV/I : pédale Sol tenue"},{"name":"Cm/G","beats":4,"voicing":"X-10-10-8-8-X","bassGuide":"A=10, D=10, G=8, B=8 — iv mineur : Eb descend d’un demi-ton"}]},{"id":"neoclassical-harmonic-tension","name":"Néo-classique — Tension mineure harmonique","style":"fusion","tempo":60,"feel":"Baroque · Néo-classique · Dramatique","difficulty":3,"description":"La mineur harmonique. Diminué 7 pour une résolution mineure intense. Cordes A-D-G-B.","chords":[{"name":"Am/E","beats":4,"voicing":"X-7-7-5-5-X","bassGuide":"A=7, D=7, G=5, B=5 — Im pédale E"},{"name":"Dm/F","beats":4,"voicing":"X-8-7-7-6-X","bassGuide":"A=8, D=7, G=7, B=6 — IVm/III : basse monte"},{"name":"G#dim7","beats":4,"voicing":"X-11-9-10-9-X","bassGuide":"A=11, D=9, G=10, B=9 — VIIdim7 : tension max"},{"name":"E7","beats":4,"voicing":"X-7-6-7-5-X","bassGuide":"A=7, D=6, G=7, B=5 — V7 : résolution vers Am"}]},{"id":"metal-atmos-b-minor","name":"Metal Atmosphérique — Nappe Si mineur","style":"fusion","tempo":56,"feel":"Metal progressif · Atmosphérique · Drone","difficulty":3,"description":"Main ancrée cases 11-14, effet bourdon mystique. Si mineur harmonique. Cordes A-D-G-B.","chords":[{"name":"Bm(maj7)","beats":4,"voicing":"X-14-12-11-11-X","bassGuide":"A=14, D=12, G=11, B=11 — Im(maj7) : la sensible G# dès le départ"},{"name":"Gmaj7/B","beats":4,"voicing":"X-14-12-12-12-X","bassGuide":"A=14, D=12, G=12, B=12 — bVImaj7/I : pédale B, nappe ouvre"},{"name":"Em/B","beats":4,"voicing":"X-14-14-12-12-X","bassGuide":"A=14, D=14, G=12, B=12 — IVm/I : pédale B tenue, sombre"},{"name":"F#7b9/A#","beats":4,"voicing":"X-13-14-12-14-X","bassGuide":"A=13, D=14, G=12, B=14 — V7b9 : tension maximale avant résolution"}]},{"id":"metal-heavy-dissonance","name":"Metal Heavy — Lourdeur Phrygienne","style":"fusion","tempo":52,"feel":"Haut gain · Drone · Dissonant · Phrygien","difficulty":4,"description":"Basse drone sur B, tritons et secondes mineures. Tension massive et sombre. Cordes A-D-G-B.","chords":[{"name":"Bm","beats":4,"voicing":"X-14-16-16-15-X","bassGuide":"A=14, D=16, G=16, B=15 — Im : point de départ lourd"},{"name":"Bmb5","beats":4,"voicing":"X-14-15-16-15-X","bassGuide":"A=14, D=15, G=16, B=15 — Im♭5 : triton, dissonance max"},{"name":"B7b9","beats":4,"voicing":"X-14-15-14-13-X","bassGuide":"A=14, D=15, G=14, B=13 — I7b9 : seconde mineure C contre B"},{"name":"F#7/A#","beats":4,"voicing":"X-13-14-15-15-X","bassGuide":"A=13, D=14, G=15, B=15 — V7/III : résolution vers Bm"}]},{"id":"shred-pedal-point-am","name":"Shred — Vamp Pedal Point La mineur","style":"fusion","tempo":100,"feel":"Shred · Tapping · Pedal Point · Mineur harmonique","difficulty":3,"description":"Basse immuable case 12 sur A. Parfait pour tapping haute vitesse ou solo mineur harmonique. Cordes A-D-G-B.","chords":[{"name":"Am","beats":4,"voicing":"X-12-14-14-13-X","bassGuide":"A=12 pédale — Im : fondation"},{"name":"F/A","beats":4,"voicing":"X-12-15-14-13-X","bassGuide":"A=12 pédale — bVI/I : la couleur s’ouvre"},{"name":"Dm/A","beats":4,"voicing":"X-12-12-14-15-X","bassGuide":"A=12 pédale — IVm/I : monte vers E"},{"name":"E/A","beats":4,"voicing":"X-12-14-13-12-X","bassGuide":"A=12 pédale — V/I : G# sensible, retour tendu"}]},{"id":"whole-tone-floating","jazzSub":"modal","name":"Gamme par tons — Flottaison impressionniste","style":"jazz","tempo":60,"feel":"Debussy · Jazz moderne · Flottaison","difficulty":3,"description":"Tous intervalles égaux, aucun centre de gravité. C7#5 → D7#5 → E7#5 → F#7#5. Cordes A-D-G-B.","chords":[{"name":"C7#5","beats":4,"voicing":"X-3-2-3-5-X","bassGuide":"A=3, D=2, G=3, B=5"},{"name":"D7#5","beats":4,"voicing":"X-5-4-5-7-X","bassGuide":"A=5, D=4, G=5, B=7"},{"name":"E7#5","beats":4,"voicing":"X-7-6-7-9-X","bassGuide":"A=7, D=6, G=7, B=9"},{"name":"F#7#5","beats":4,"voicing":"X-9-8-9-11-X","bassGuide":"A=9, D=8, G=9, B=11"}]},{"id":"quartal-tyner","jazzSub":"modal","name":"Quartal — Style McCoy Tyner","style":"jazz","tempo":100,"feel":"Modal · Jazz années 60 · Ouvert","difficulty":2,"description":"Accords en quartes empilées. Sonorité ouverte et ambiguë. Cordes A-D-G-B.","chords":[{"name":"Quartale D","beats":4,"voicing":"X-5-5-5-5-X","bassGuide":"Barré case 5 — quartes sur A-D-G-B"},{"name":"Quartale E","beats":4,"voicing":"X-7-7-7-7-X","bassGuide":"Barré case 7"},{"name":"Quartale G","beats":4,"voicing":"X-10-10-10-10-X","bassGuide":"Barré case 10"},{"name":"Quartale F","beats":4,"voicing":"X-8-8-8-8-X","bassGuide":"Barré case 8"}]},{"id":"flamenco-phrygian","name":"Flamenco — Cadence phrygienne andalouse","style":"fusion","tempo":80,"feel":"Flamenco · Phrygien espagnol · Andalou","difficulty":2,"description":"E → Fmaj7#11 → G6 → Fmaj7#11. Tension dramatique du I vers le bII. Cordes A-D-G-B.","chords":[{"name":"E","beats":4,"voicing":"X-7-6-4-5-X","bassGuide":"A=7, D=6, G=4, B=5 — I Majeur phrygien"},{"name":"Fmaj7#11","beats":4,"voicing":"X-8-7-5-5-X","bassGuide":"A=8, D=7, G=5, B=5 — bII : tension andalouse"},{"name":"G6","beats":4,"voicing":"X-10-9-7-8-X","bassGuide":"A=10, D=9, G=7, B=8 — bIII : ouverture"},{"name":"Fmaj7#11","beats":4,"voicing":"X-8-7-5-5-X","bassGuide":"A=8, D=7, G=5, B=5 — bII : retour andalou"}]},{"id":"bossa-nova-tight","jazzSub":"bossa","name":"Bossa Nova — Voicings serrés (João Gilberto)","style":"jazz","tempo":68,"feel":"Bossa Nova · Brésilien · Fingerpicking","difficulty":3,"description":"Voicings jazz intimistes. Cmaj9 → Am9 → Dm9 → G13. Cordes A-D-G-B.","chords":[{"name":"Cmaj9","beats":4,"voicing":"X-3-2-4-3-X","bassGuide":"A=3, D=2, G=4, B=3"},{"name":"Am9","beats":4,"voicing":"X-12-10-12-12-X","bassGuide":"A=12, D=10, G=12, B=12"},{"name":"Dm9","beats":4,"voicing":"X-5-3-5-5-X","bassGuide":"A=5, D=3, G=5, B=5"},{"name":"G13","beats":4,"voicing":"X-10-12-10-10-X","bassGuide":"A=10, D=12, G=10, B=10 — G barré 10, F en D12"}]},{"id":"reggae-skank","name":"Reggae — Minimalisme Skank","style":"funk","tempo":76,"feel":"Reggae · Contretemps · Étouffé","difficulty":1,"description":"Voicings étouffés à contretemps. Am → Dm → Em → Am. Cordes A-D-G-B.","chords":[{"name":"Am","beats":4,"voicing":"X-12-14-14-13-X","bassGuide":"A=12, D=14, G=14, B=13 — Im haut de manche"},{"name":"Dm","beats":4,"voicing":"X-5-7-7-6-X","bassGuide":"A=5, D=7, G=7, B=6 — IVm"},{"name":"Em","beats":4,"voicing":"X-7-9-9-8-X","bassGuide":"A=7, D=9, G=9, B=8 — Vm"},{"name":"Am","beats":4,"voicing":"X-12-14-14-13-X","bassGuide":"A=12, D=14, G=14, B=13 — retour Im"}]},{"id":"latin-jazz-coltrane","jazzSub":"bossa","name":"Latin Jazz — Coltrane Changes Afro-Cuban","style":"jazz","tempo":110,"feel":"Latin Jazz · Montuno · Coltrane","difficulty":4,"description":"Cycle par tierces majeures. Cmaj7 → Eb7 → Abmaj7 → B7. Cordes A-D-G-B.","chords":[{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3, D=5, G=4, B=5 — I"},{"name":"Eb7","beats":4,"voicing":"X-6-8-6-8-X","bassGuide":"A=6, D=8, G=6, B=8 — substitution tierce majeure"},{"name":"Abmaj7","beats":4,"voicing":"X-11-13-12-13-X","bassGuide":"A=11, D=13, G=12, B=13 — bVI"},{"name":"B7","beats":4,"voicing":"X-2-4-2-4-X","bassGuide":"A=2, D=4, G=2, B=4 — substitution tritonique"}]},{"id":"film-score-zimmer","name":"Film Score — Tension cinématique (Zimmer)","style":"fusion","tempo":50,"feel":"Cinématique · Cluster · Dramatique","difficulty":3,"description":"Clusters de secondes mineures, texture lourde et immersive. Cordes A-D-G-B.","chords":[{"name":"Am(add9)","beats":4,"voicing":"X-7-9-9-8-X","bassGuide":"A=7, D=9, G=9, B=8 — Am9 compact case 7"},{"name":"Fmaj7#11","beats":4,"voicing":"X-8-9-10-10-X","bassGuide":"A=8, D=9, G=10, B=10 — Fmaj7#11 compact"},{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3, D=5, G=4, B=5 — résolution lumineuse"},{"name":"Gsus4","beats":4,"voicing":"X-10-10-7-8-X","bassGuide":"A=10, D=10, G=7, B=8 — suspension finale"}]},{"id":"post-rock-ambient","name":"Post-Rock — Évolution crescendo (Mogwai)","style":"fusion","tempo":65,"feel":"Post-Rock · Ambiant · Espacé","difficulty":2,"description":"Grands intervalles, espace infini. Em7 → Cmaj7 → Gmaj7 → Dadd9. Cordes A-D-G-B.","chords":[{"name":"Em7","beats":4,"voicing":"X-7-9-7-8-X","bassGuide":"A=7, D=9, G=7, B=8"},{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3, D=5, G=4, B=5"},{"name":"Gmaj7","beats":4,"voicing":"X-10-12-11-12-X","bassGuide":"A=10, D=12, G=11, B=12"},{"name":"Dadd9","beats":4,"voicing":"X-5-4-7-5-X","bassGuide":"A=5, D=4, G=7, B=5"}]},{"id":"math-rock-angular","name":"Math Rock — Métrique asymétrique","style":"fusion","tempo":120,"feel":"Math Rock · 7/8 · Lydien · Angulaire","difficulty":4,"description":"Voicings angulaires en métriques impaires. Fmaj7#11 → G6/9 → Am11 → Cmaj7/E. Cordes A-D-G-B.","chords":[{"name":"Fmaj7#11","beats":4,"voicing":"X-8-9-10-10-X","bassGuide":"A=8, D=9, G=10, B=10 — #11 lydien"},{"name":"G6/9","beats":4,"voicing":"X-10-9-9-10-X","bassGuide":"A=10, D=9, G=9, B=10"},{"name":"Am11","beats":4,"voicing":"X-12-12-12-13-X","bassGuide":"A=12, D=12, G=12, B=13"},{"name":"Cmaj7/E","beats":4,"voicing":"X-7-10-9-8-X","bassGuide":"A=7, D=10, G=9, B=8 — basse E"}]},{"id":"fingerpicking-open-strings","name":"Fingerpicking — Cordes fixes (Folk/Country)","style":"beatles","tempo":72,"feel":"Folk · Fingerpicking · Acoustique","difficulty":2,"description":"G et B restent fixes ou à vide, basse mouvante. Cadd9 → G/B → Asus4 → Em7.","chords":[{"name":"Cadd9","beats":4,"voicing":"X-3-2-0-3-X","bassGuide":"A=3, D=2, G=0 vide, B=3"},{"name":"G/B","beats":4,"voicing":"X-2-0-0-3-X","bassGuide":"A=2, D=0 vide, G=0 vide, B=3"},{"name":"Asus4","beats":4,"voicing":"X-0-2-2-3-X","bassGuide":"A=0 vide, D=2, G=2, B=3"},{"name":"Em7","beats":4,"voicing":"X-2-2-0-3-X","bassGuide":"A=2, D=2, G=0 vide, B=3"}]},{"id":"open-d-tuning","name":"Open D — Résonance accordage ouvert","style":"beatles","tempo":70,"feel":"Open D · Slide · Folk · Résonance","difficulty":2,"description":"ACCORDAGE OPEN D (D-A-D-F#-A-D). Cordes A-D-G-B deviennent A-D-F#-A. Barres parfaites.","chords":[{"name":"D (Open)","beats":4,"voicing":"X-0-0-0-0-X","bassGuide":"Toutes cordes à vide — D majeur parfait"},{"name":"G (Barre 5)","beats":4,"voicing":"X-5-5-5-5-X","bassGuide":"Barré case 5 — G majeur"},{"name":"A (Barre 7)","beats":4,"voicing":"X-7-7-7-7-X","bassGuide":"Barré case 7 — A majeur"},{"name":"Bm","beats":4,"voicing":"X-2-0-1-2-X","bassGuide":"A=2, D=0 vide, G=1, B=2 — VIm"}]},{"id":"prog-f-lydian-modern","name":"Le Hack Lydien Moderne","style":"lydien","tempo":85,"feel":"Aérien · Suspendu · Moderne","difficulty":3,"description":"Quarte augmentée (Si) via superposition Em7 sur basse F. F Lydien. Cordes A-D-G-B.","chords":[{"name":"Fmaj7#11","beats":4,"voicing":"X-8-9-9-10-X","bassGuide":"A=8 fondamentale — couleur Lydienne brute"},{"name":"Em7","beats":4,"voicing":"X-7-9-7-8-X","bassGuide":"A=7 glisse d’une case — tensions majeures"},{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3 descente bas du manche — rondeur"},{"name":"Bm7b5","beats":4,"voicing":"X-2-3-2-3-X","bassGuide":"A=2 transition — relance la boucle"}]},{"id":"prog-fusion-lydian-dominant","jazzSub":"fusion","name":"Glow Fusion — Lydian Dominant","style":"fusion","tempo":95,"feel":"Jazz-Fusion · Sophistiqué · Brillant","difficulty":4,"description":"Mode Lydien Dominant (4e mode min. mélodique). Transitions riches sans perdre le groove. Cordes A-D-G-B.","chords":[{"name":"C7#11","beats":4,"voicing":"X-3-2-3-5-X","bassGuide":"A=3 fondamentale — quarte augmentée en haut"},{"name":"B7alt","beats":4,"voicing":"X-2-1-2-3-X","bassGuide":"A=2 glisse demi-ton vers bas — ultra-tendu"},{"name":"Em9","beats":4,"voicing":"X-7-5-7-7-X","bassGuide":"A=7 saut de quarte — résolution aérée"},{"name":"A13","beats":4,"voicing":"X-5-5-6-7-X","bassGuide":"A=5 descente d’un ton — prépare retour C7"}]},{"id":"prog-phrygian-dominant-storm","name":"L’Orage Phrygien Dominant","style":"fusion","tempo":110,"feel":"Sombre · Majestueux · Oriental","difficulty":3,"description":"Mode Phrygien Dominant (5e mode min. harmonique). Tierce majeure + seconde mineure. Cordes A-D-G-B.","chords":[{"name":"D","beats":4,"voicing":"X-5-4-2-3-X","bassGuide":"A=5 accord pivot — couleur majeure du mode"},{"name":"Eb","beats":4,"voicing":"X-6-5-3-4-X","bassGuide":"A=6 degré bII♭ — caractéristique phrygien"},{"name":"Cm/Eb","beats":4,"voicing":"X-6-5-5-4-X","bassGuide":"A=6 basse fixe — accord s’assombrit"},{"name":"D7b9","beats":4,"voicing":"X-5-4-5-4-X","bassGuide":"A=5 retour avec b9 agressive"}]},{"id":"prog-synthwave-neon-drive","name":"Neon Drive — Synthwave 80s","style":"pop","tempo":115,"feel":"Nostalgique · Rétro-futuriste · Rythmique","difficulty":2,"description":"Synthwave nocturne. Basse en croches constantes, grands accords ouverts qui planent. Cordes A-D-G-B.","chords":[{"name":"Am(add9)","beats":4,"voicing":"X-12-14-14-12-X","bassGuide":"A=12 fondamentale — impulsion du pulse"},{"name":"Fmaj7","beats":4,"voicing":"X-8-10-9-10-X","bassGuide":"A=8 degré VI — mélancolie 80s"},{"name":"G6","beats":4,"voicing":"X-10-12-12-12-X","bassGuide":"A=10 remontée d’un ton — ouvert, héroïque"},{"name":"Em7","beats":4,"voicing":"X-7-9-7-8-X","bassGuide":"A=7 transition sombre — avant le reboot"}]},{"id":"prog-cinema-epic-hero","name":"L’Épopée du Héros — Hollywood","style":"fusion","tempo":80,"feel":"Majestueux · Héroïque · Grandiose","difficulty":3,"description":"Médiantes chromatiques (majeur → majeur éloigné). Secret des thèmes SF/aventure. Cordes A-D-G-B.","chords":[{"name":"Cmaj","beats":4,"voicing":"X-3-5-5-5-X","bassGuide":"A=3 stabilité tonique avant le voyage"},{"name":"Abmaj","beats":4,"voicing":"X-11-10-8-9-X","bassGuide":"A=11 rupture totale — magie cinématique"},{"name":"Bbmaj","beats":4,"voicing":"X-1-3-3-3-X","bassGuide":"A=1 degré bVII héroïque — prépare la gloire"},{"name":"Cmaj","beats":4,"voicing":"X-3-5-5-5-X","bassGuide":"A=3 résolution triomphale"}]},{"id":"prog-disney-fairytale","name":"Le Conte de Fées — Mélancolie & Magie","style":"pop","tempo":75,"feel":"Féerique · Nostalgique · Scintillant","difficulty":3,"description":"Dominante secondaire altérée (A7b9) qui brise la tonalité pour une larme d’émotion. Cordes A-D-G-B.","chords":[{"name":"Cmaj7","beats":4,"voicing":"X-3-5-4-5-X","bassGuide":"A=3 départ innocent et pur"},{"name":"A7b9","beats":4,"voicing":"0-X-5-3-2-X","bassGuide":"A=0 basse à vide — tension théâtrale"},{"name":"Dm9","beats":4,"voicing":"X-5-3-5-5-X","bassGuide":"A=5 soulagement — couleur jazz/pop douce"},{"name":"G7b13","beats":4,"voicing":"X-10-9-10-8-X","bassGuide":"A=10 tension finale — appelle le retour"}]},{"id":"prog-animation-dark-fantasy","name":"L’Ombre de Burton — Animation Sombre","style":"fusion","tempo":100,"feel":"Excentrique · Macabre · Mystérieux","difficulty":3,"description":"Style Danny Elfman. Mineur harmonique + glissement chromatique instable, urgence magique. Cordes A-D-G-B.","chords":[{"name":"Cm","beats":4,"voicing":"X-3-5-5-4-X","bassGuide":"A=3 climat sombre et pesant"},{"name":"Abm","beats":4,"voicing":"X-11-9-8-9-X","bassGuide":"A=11 note hors-gamme — malaise, bizarrerie"},{"name":"G7","beats":4,"voicing":"X-10-9-10-8-X","bassGuide":"A=10 dominante qui grince — château hanté"},{"name":"Cm","beats":4,"voicing":"X-3-5-5-4-X","bassGuide":"A=3 retour au calme relatif"}]},{"id":"prog-pixar-tearjerker","name":"Les Larmes du Studio — Émotion Pixar","style":"pop","tempo":70,"feel":"Déchirant · Nostalgique · Bienveillant","difficulty":2,"description":"Le IVm (Fm6) dans une tonalité majeure — l’outil ultime pour faire basculer du bonheur aux larmes (« Là-Haut »). Cordes A-D-G-B.","chords":[{"name":"Cmaj","beats":4,"voicing":"X-3-5-5-5-X","bassGuide":"A=3 joie simple et lumineuse"},{"name":"C/E","beats":4,"voicing":"X-7-5-5-5-X","bassGuide":"A=7 basse sur la tierce — sensation de décollage"},{"name":"Fmaj7","beats":4,"voicing":"X-8-10-9-10-X","bassGuide":"A=8 sommet — plénitude"},{"name":"Fm6","beats":4,"voicing":"X-8-10-7-9-X","bassGuide":"A=8 le Lab (G frette 7) brise le cœur — nostalgie"}]},{"id":"prog-fusion-extended-turnaround","name":"Le Turnaround Spatial","style":"fusion","tempo":90,"feel":"Feutré · Nocturne · Moderne","difficulty":4,"description":"Turnaround en Mi mineur qui voyage le long du manche. Dominante secondaire altérée + suspension Cmaj7#11. Cordes A-D-G-B.","chords":[{"name":"Em9","beats":4,"voicing":"X-7-5-7-7-X","bassGuide":"A=7 ancrage central — couleur douce"},{"name":"A7(b9/b13)","beats":4,"voicing":"X-12-13-12-13-X","bassGuide":"A=12 grand saut vers le haut — dramatique"},{"name":"Cmaj7#11","beats":4,"voicing":"X-3-4-4-5-X","bassGuide":"A=3 redescente en bas du manche — ouvre l’espace"},{"name":"B7alt(#9)","beats":4,"voicing":"X-2-1-2-3-X","bassGuide":"A=2 glisse demi-ton — tension max avant résolution"}]},{"id":"prog-jazz-ii-v-i-altered","jazzSub":"standards","name":"L’Anatomie du ii-V-i Mineur","style":"jazz","tempo":80,"feel":"Sophistiqué · Sombre · Ancré","difficulty":4,"description":"La cadence reine du jazz mineur : demi-diminué → B7 altéré → Em9, relance chromatique via G13. Cordes A-D-G-B.","chords":[{"name":"F#m7b5","beats":4,"voicing":"X-9-10-9-10-X","bassGuide":"A=9 introduction instable, introspective"},{"name":"B7alt(#9)","beats":4,"voicing":"X-2-1-2-3-X","bassGuide":"A=2 rupture de dynamique — basse tout en bas"},{"name":"Em9","beats":4,"voicing":"X-7-5-7-7-X","bassGuide":"A=7 résolution stable et apaisante"},{"name":"G13","beats":4,"voicing":"X-10-9-10-10-X","bassGuide":"A=10 pivot chromatique — réattaque F#m7b5 un demi-ton plus bas"}]},{"id":"fusion-voiceleading-dorian-melodic","jazzSub":"fusion","name":"🎸 Fusion — Dorien ↔ Mineur Mélodique","style":"fusion","tempo":95,"feel":"Jazz-Fusion / Prog — voice-leading D→D#","difficulty":4,"description":"Boucle de voice-leading : le D (b7 dorien) glisse en D# (7M mélodique) sur la mesure 3, créant la friction mineur/majeur. La mesure 4 (A7#11 = mode IV lydien dominant) ramène vers ","chords":[{"name":"Em9","beats":4,"voicing":"X-7-5-7-7-X","bassGuide":"E pédale — base dorienne ouverte et fluide"},{"name":"A9","beats":4,"voicing":"5-X-5-6-5-X","bassGuide":"A — IV dominant qui confirme le dorien (C# = 6te)"},{"name":"Em(maj9)","beats":4,"voicing":"X-7-5-8-7-X","bassGuide":"E — le D monte en D# (7M) : bascule en mineur mélodique"},{"name":"A7(#11)","beats":4,"voicing":"5-X-5-6-4-X","bassGuide":"A — mode IV lydien dominant, D# = leading tone vers Em9"}]},{"id":"lydian-trilogy-morphing","name":"✨ Lydian Trilogy (Morphing Loop)","style":"fusion","tempo":88,"feel":"Progressive Fusion / Modal Rock","difficulty":4,"description":"La trilogie lydienne : on morphe entre 3 lydiens par voice-leading interne. Cmaj7#11 (lydien) → Cmaj7#5 (lydien augmenté, le G monte en G#) → C7#11 (lydien dominant, le B descend e","chords":[{"name":"Cmaj7(#11)","beats":4,"voicing":"8-X-9-9-7-X","bassGuide":"C pédale — la base lydienne lumineuse (F# + B)"},{"name":"Cmaj7(#5)","beats":4,"voicing":"8-X-9-9-9-X","bassGuide":"C — le G monte en G# : bascule lydien augmenté"},{"name":"C7(#11)","beats":4,"voicing":"8-X-8-9-7-X","bassGuide":"C — le B descend en Bb : lydien dominant (overtone scale)"},{"name":"Bb/C","beats":4,"voicing":"8-X-8-7-6-X","bassGuide":"C — slash chord mixolydien, relâche la #4 et ramène à Cmaj7#11"}]},{"id":"modal-descent-mixo-dor-phry","name":"🌗 Modal Descent (single-finger morph)","style":"fusion","tempo":92,"feel":"Neo-Soul / Fusion / Metal Jam","difficulty":4,"description":"Descente modale sur une seule fondamentale A : A9 (mixolydien, lumineux) → Am9 (dorien, le C# tombe en C) → Am7(b9) (phrygien, le B tombe en Bb qui frotte la fondamentale) → G/A (s","chords":[{"name":"A9","beats":4,"voicing":"5-X-5-6-5-X","bassGuide":"A pédale — dominante funky lumineuse (C# = 3M, G = b7)"},{"name":"Am9","beats":4,"voicing":"5-X-5-5-5-7","bassGuide":"A — le C# tombe en C : bascule dorienne, douce et mélancolique"},{"name":"Am7(b9)","beats":4,"voicing":"5-X-5-5-5-6","bassGuide":"A — le B tombe en Bb : phrygien, le b9 frotte la fondamentale"},{"name":"G/A","beats":4,"voicing":"5-X-5-4-3-X","bassGuide":"A — slash qui relâche le phrygien, Bb remonte en B, retour vers A9"}]},{"id":"constant-structure-dorian-cycle","name":"🛸 Constant Structure (cycle 3 frettes)","style":"fusion","tempo":100,"feel":"Modern Fusion / Atmospheric","difficulty":2,"description":"Le MÊME voicing dorien (m9) déplacé par tierces mineures (+3 frettes à chaque mesure) : Em9 → Gm9 → Bbm9 → C#m9 → reboucle sur Em9. Comme la structure interne de l’accord ne change","chords":[{"name":"Em9","beats":4,"voicing":"X-7-5-7-7-X","bassGuide":"E (frette 7) — forme de base, à verrouiller"},{"name":"Gm9","beats":4,"voicing":"X-10-8-10-10-X","bassGuide":"G (frette 10) — même forme +3 frettes"},{"name":"Bbm9","beats":4,"voicing":"X-13-11-13-13-X","bassGuide":"Bb (frette 13 ou 1) — encore +3 frettes"},{"name":"C#m9","beats":4,"voicing":"X-4-2-4-4-X","bassGuide":"C# (frette 4) — +3 frettes ramène à E (frette 7)"}]},{"id":"pop-mccartney-iv-iv","name":"Pop — IV → iv (style McCartney)","style":"pop","tempo":72,"feel":"Pop mélodique · Mélancolique","difficulty":2,"description":"Passage IV majeur → iv mineur avec ligne mélodique interne mouvante. Cordes A-D-G-B.","chords":[{"name":"E","beats":4,"voicing":"X-7-6-4-5-X","bassGuide":"A=7, D=6, G=4, B=5"},{"name":"G#7/D#","beats":4,"voicing":"X-6-4-5-4-X","bassGuide":"A=6, D=4, G=5, B=4"},{"name":"A/E","beats":4,"voicing":"X-7-7-6-5-X","bassGuide":"A=7, D=7, G=6, B=5"},{"name":"Am/E","beats":4,"voicing":"X-7-7-5-5-X","bassGuide":"A=7, D=7, G=5, B=5 — Sol naturel : couleur mineure"}]},{"id":"jazz-autumn-leaves","name":"Autumn Leaves","jazzSub":"standards","style":"jazz","tempo":120,"feel":"Swing médium","difficulty":2,"description":"LE standard d'entrée. Un cycle de quintes qui enchaîne un ii-V-I majeur (Gmaj) et un ii-V-i mineur (Em). Accords ouverts, tout tombe sous la main.","chords":[{"name":"Am7","beats":4,"voicing":"x-0-2-0-1-0","bassGuide":"A → D. iim7 de Sol majeur."},{"name":"D7","beats":4,"voicing":"x-x-0-2-1-2","bassGuide":"D → G. V7, prépare Gmaj7."},{"name":"Gmaj7","beats":4,"voicing":"3-2-0-0-0-2","bassGuide":"Imaj7. Résolution lumineuse."},{"name":"Cmaj7","beats":4,"voicing":"x-3-2-0-0-0","bassGuide":"IVmaj7. Cordes à vide, ça respire."},{"name":"F#m7b5","beats":4,"voicing":"2-x-2-2-1-x","bassGuide":"iiø de Mi mineur. Le demi-diminué."},{"name":"B7b9","beats":4,"voicing":"x-2-1-2-1-2","bassGuide":"V7b9 : tension max vers Em."},{"name":"Em7","beats":4,"voicing":"0-2-0-0-0-0","bassGuide":"im. Le centre mineur. Corde à vide E."},{"name":"E7b9","beats":4,"voicing":"0-2-0-1-0-1","bassGuide":"Relance : V7b9/Am, la boucle repart."}]},{"id":"jazz-so-what","name":"So What (voicing Bill Evans)","jazzSub":"modal","style":"jazz","tempo":120,"feel":"Modal swing · quartal","difficulty":3,"description":"Le voicing culte : trois quartes empilées + une tierce au sommet. Dorien pur. Dm7 pédale, montée d'un demi-ton sur Ebm7 puis retour. L'harmonie ne bouge presque pas — c'est le mode qui chante.","chords":[{"name":"Dm11","beats":16,"voicing":"x-5-5-5-6-5","bassGuide":"Pédale D. Voicing So What : D-G-C-F-A. Laisse tourner, joue dorien."},{"name":"Ebm11","beats":8,"voicing":"x-6-6-6-7-6","bassGuide":"Montée d'un demi-ton. Même forme +1. La surprise modale de Miles."},{"name":"Dm11","beats":8,"voicing":"x-5-5-5-6-5","bassGuide":"Retour à la maison. Dorien de D."}]},{"id":"jazz-maiden-voyage","name":"Maiden Voyage (9sus flottants)","jazzSub":"modal","style":"jazz","tempo":100,"feel":"Modal · suspendu · Herbie","difficulty":3,"description":"Le dispositif de Herbie Hancock : des 9sus4 qui flottent sans jamais résoudre. Pas de tierce, donc ni majeur ni mineur — juste de l'espace. Inspiré de Maiden Voyage (accords déplacés, pas la grille exacte).","chords":[{"name":"D9sus4","beats":8,"voicing":"x-5-5-5-5-5","bassGuide":"Pédale D. Quartes pures, aucune tierce. Ça plane."},{"name":"F9sus4","beats":8,"voicing":"x-8-8-8-8-8","bassGuide":"Même forme +3 frettes. Le sus se déplace, l'apesanteur reste."},{"name":"Eb9sus4","beats":8,"voicing":"x-6-6-6-6-6","bassGuide":"Redescente. La couleur ne change pas, seule la hauteur bouge."},{"name":"Db9sus4","beats":8,"voicing":"x-4-4-4-4-4","bassGuide":"Encore plus bas. Boucle hypnotique vers D9sus4."}]},{"id":"jazz-blue-bossa","name":"Blue Bossa","jazzSub":"bossa","style":"jazz","tempo":120,"feel":"Bossa mineure · latin","difficulty":3,"description":"Kenny Dorham. Un ii-V-i mineur en Do mineur avec une escapade en Réb majeur. La bossa qui apprend le mineur latin. Basse fondamentale-quinte régulière.","chords":[{"name":"Cm7","beats":8,"voicing":"x-3-5-3-4-3","bassGuide":"im7. Centre tonal, C alterné avec G."},{"name":"Fm7","beats":8,"voicing":"x-8-10-8-9-8","bassGuide":"ivm7. F-C à la basse."},{"name":"Dm7b5","beats":4,"voicing":"x-5-6-5-6-x","bassGuide":"iiø : le demi-diminué qui annonce le V."},{"name":"G7b9","beats":4,"voicing":"3-x-3-4-3-4","bassGuide":"V7b9 : tension vers Cm."},{"name":"Ebmaj7","beats":8,"voicing":"x-6-5-3-3-3","bassGuide":"Escapade : bIIImaj7, la lumière relative."},{"name":"Dm7b5","beats":4,"voicing":"x-5-6-5-6-x","bassGuide":"Retour du iiø."},{"name":"G7b9","beats":4,"voicing":"3-x-3-4-3-4","bassGuide":"V7b9 final, reboucle sur Cm7."}]},{"id":"jazz-samba-major","name":"Samba lumineuse (ii-V #11)","jazzSub":"bossa","style":"jazz","tempo":112,"feel":"Samba · brésilien · brillant","difficulty":3,"description":"Une samba majeure avec la couleur #11 typique du Brésil (Jobim). Le maj7#11 lydien donne cet air ensoleillé et sophistiqué. Basse qui pousse en croches.","chords":[{"name":"Gmaj7#11","beats":4,"voicing":"3-x-4-4-2-x","bassGuide":"Imaj7#11 : le C# lydien, soleil brésilien."},{"name":"Am7","beats":4,"voicing":"x-0-2-0-1-0","bassGuide":"iim7. Ouvert, résonant."},{"name":"D9","beats":4,"voicing":"x-5-4-5-5-x","bassGuide":"V9. La 9e adoucit la dominante."},{"name":"Gmaj7#11","beats":4,"voicing":"3-x-4-4-2-x","bassGuide":"Retour au Imaj7#11."},{"name":"Em7","beats":4,"voicing":"0-2-0-0-0-0","bassGuide":"vim7. Bascule relative douce."},{"name":"A7","beats":4,"voicing":"x-0-2-0-2-0","bassGuide":"V/V : dominante secondaire, tire vers D."},{"name":"Am7","beats":4,"voicing":"x-0-2-0-1-0","bassGuide":"iim7."},{"name":"D9","beats":4,"voicing":"x-5-4-5-5-x","bassGuide":"V9, reboucle."}]},{"id":"jazz-sco-vamp","name":"Vamp dominant (style Scofield)","jazzSub":"fusion","style":"jazz","tempo":92,"feel":"Jazz-fusion · groove sale · bluesy","difficulty":3,"description":"Le terrain de John Scofield : un vamp de dominantes tendues (7#9, 13) sur un groove qui traîne. Bluesy, gras, fait pour improviser mixo/altéré/blues par-dessus.","chords":[{"name":"E7#9","beats":8,"voicing":"0-x-0-1-0-3","bassGuide":"Pédale E. L'accord Hendrix : majeur ET mineur en même temps."},{"name":"A13","beats":4,"voicing":"x-0-x-0-2-2","bassGuide":"IV13 : ouverture, cordes à vide. La 13e (F#) chante."},{"name":"G13","beats":2,"voicing":"3-x-3-4-5-x","bassGuide":"bVII13 glissant, appoggiature vers E."},{"name":"F#13","beats":2,"voicing":"2-x-2-3-4-x","bassGuide":"Chromatisme descendant, retour tendu vers E7#9."}]},{"id":"jazz-metheny-bright","name":"Nappe lumineuse (style Metheny)","jazzSub":"fusion","style":"jazz","tempo":88,"feel":"Jazz-fusion · lumineux · ouvert","difficulty":3,"description":"L'univers Pat Metheny : des maj7#11 et add9 ouverts sur une pédale, cette clarté aérienne un peu mélancolique. Cordes à vide et grands intervalles, ça sonne large.","chords":[{"name":"Amaj7#11","beats":8,"voicing":"x-0-1-1-2-x","bassGuide":"Imaj7#11 pédale A. Le D# lydien, lumière ouverte."},{"name":"Gmaj7","beats":4,"voicing":"3-2-0-0-0-2","bassGuide":"bVIImaj7 : recul lumineux, pas de tension."},{"name":"Dadd9/F#","beats":4,"voicing":"2-x-0-2-3-0","bassGuide":"IV add9 basse F#, la ligne monte."},{"name":"Bm11","beats":8,"voicing":"x-2-0-2-3-0","bassGuide":"vim11 : mélancolie ouverte, résonance des cordes à vide."}]}];
+const STYLE_LABELS={fusion:"Fusion",funk:"Funk",jazz:"Jazz",beatles:"Beatles",lydien:"Lydien",live:"Live",blues:"Blues",pop:"Pop",morpher:"📁 Modal Morpher",starter:"🚀 Starters",manouche:"🎻 Manouche",metal:"🤘 Metal",punk:"🧷 Punk",billy:"🕺 Rockabilly",reggae:"🌿 Reggae",user:"✏️ Mes grilles"};
+
+/* ============================================================
+   2b. DOSSIER MODAL MORPHER — suites par mode (degrés diatoniques)
+   reprises de guitar-modal-morpher, accords générés dans la tonique choisie
+   ============================================================ */
+const MORPHER_PROGS={
+  "Ionien (Majeur)":[
+    {title:"Cadence classique",desc:"I – IV – V – I : la résolution la plus franche, le repos total.",degrees:[0,3,4,0]},
+    {title:"Pop suspendue",desc:"I – V – vi – IV : monte, résout à moitié, respire.",degrees:[0,4,5,3]}],
+  "Dorien":[
+    {title:"Vamp modal",desc:"i – IV : la 6te majeure du Dorien fait sonner le IV, impossible en mineur naturel.",degrees:[0,3]},
+    {title:"Aller-retour coloré",desc:"i – bVII – IV – i : classique fusion/rock modal, jamais de dominante V7.",degrees:[0,6,3,0]}],
+  "Phrygien":[
+    {title:"Cadence phrygienne",desc:"i – bII – i : le bII écrase la tonique par en dessous, tension flamenco/metal.",degrees:[0,1,0]},
+    {title:"Vamp sombre",desc:"i – bVII – bII – i : couleur espagnole, tourne sans jamais se stabiliser franchement.",degrees:[0,6,1,0]}],
+  "Lydien":[
+    {title:"Flottement lydien",desc:"I – II – I : le degré II majeur (au lieu de mineur) est ce qui vend la couleur.",degrees:[0,1,0]},
+    {title:"Ascension lumineuse",desc:"I – II – V – I : garde la #4 en tension avant de se poser.",degrees:[0,1,4,0]}],
+  "Mixolydien":[
+    {title:"Vamp dominante",desc:"I7 – bVII – IV – I7 : jamais de V7 classique, on reste dans la couleur blues/rock.",degrees:[0,6,3,0]},
+    {title:"Boucle groove",desc:"I – bVII : la base de nombreux riffs rock/funk sur pédale.",degrees:[0,6]}],
+  "Éolien (Mineur nat.)":[
+    {title:"Cadence mineure naturelle",desc:"i – bVI – bVII – i : très cinématique, sans sensible.",degrees:[0,5,6,0]},
+    {title:"Descente modale",desc:"i – bVII – bVI – V : la seule fois où V sonne majeur ici (emprunté).",degrees:[0,6,5,4]}],
+  "Locrien":[
+    {title:"Suspension totale",desc:"i°(b5) – bII : le mode le plus instable, jamais de vrai repos.",degrees:[0,1]}],
+  "Mineur mélodique":[
+    {title:"Mineur-majeur signature",desc:"i(maj7) – IV7 : la 7e majeure sur tonique mineure, son typique jazz/fusion.",degrees:[0,3]},
+    {title:"Montée chromatique",desc:"i – ii – V7 : la 6te et 7e majeures du mélodique donnent un vrai V7 sur mineur.",degrees:[0,1,4]}],
+  "Lydien dominant":[
+    {title:"Vamp fusion",desc:"I7#11 – bVII : la tension #11 est LE son de ce mode, à tenir longtemps.",degrees:[0,6]}],
+  "Mineure harmonique":[
+    {title:"Cadence classique mineure",desc:"i – iv – V7 – i : la sensible naturelle donne un vrai V7, son néoclassique.",degrees:[0,3,4,0]},
+    {title:"Couleur augmentée",desc:"i – bVI+ – V7 : le bVI augmenté est unique à ce mode.",degrees:[0,5,4]}],
+  "Phrygien dominant":[
+    {title:"Vamp oriental/flamenco",desc:"I7 – bII – i : la tierce majeure sur fondamentale phrygienne, son signature.",degrees:[0,1,0]}],
+  "Majeure harmonique":[
+    {title:"Majeur assombri",desc:"I – iv – V7 : le iv mineur emprunté dans un contexte majeur, teinte cinématique.",degrees:[0,3,4]}]
+};
+/* Retrouve (famille, index) d'un mode par son nom */
+function findMode(name){
+  for(const fk of Object.keys(SCALES)){
+    const idx=SCALES[fk].modes.findIndex(m=>m.name===name);
+    if(idx>=0)return {family:fk,modeIdx:idx};
+  }
+  return null;
+}
+/* Injecter les suites Morpher dans la bibliothèque */
+Object.keys(MORPHER_PROGS).forEach(modeName=>{
+  const loc=findMode(modeName);
+  if(!loc)return;
+  MORPHER_PROGS[modeName].forEach((pr,k)=>{
+    PROGRESSIONS.push({
+      id:"morpher-"+modeName+"-"+k, name:modeName+" — "+pr.title,
+      style:"morpher", tempo:90, feel:"suite modale",
+      difficulty:pr.degrees.length<=2?1:2,
+      description:pr.desc,
+      morpher:{family:loc.family,modeIdx:loc.modeIdx,degrees:pr.degrees}
+    });
+  });
+});
+
+/* ============================================================
+   2c. STARTERS MAISON — accompagnements simples sur progressions
+   génériques (domaine commun de l'harmonie : non protégeables),
+   nommés par ambiance. Pensés pour démarrer vite.
+   ============================================================ */
+const STARTER_PROGS=[
+  {id:"starter-blues-a",name:"Blues 12 mesures en La",style:"starter",tempo:92,feel:"shuffle",difficulty:1,
+    description:"LE blues de base, 3 accords de 7e. Improvise avec la penta mineure de La par-dessus, partout.",
+    chords:[
+      {name:"A7",beats:16,voicing:"x-0-2-0-2-0",bassGuide:"4 mesures. Fondamentale-quinte."},
+      {name:"D7",beats:8,voicing:"x-x-0-2-1-2",bassGuide:"2 mesures."},
+      {name:"A7",beats:8,voicing:"x-0-2-0-2-0",bassGuide:"Retour tonique."},
+      {name:"E7",beats:4,voicing:"0-2-2-1-0-0",bassGuide:"La dominante, tension."},
+      {name:"D7",beats:4,voicing:"x-x-0-2-1-2",bassGuide:"Redescente."},
+      {name:"A7",beats:4,voicing:"x-0-2-0-2-0",bassGuide:"Tonique."},
+      {name:"E7",beats:4,voicing:"0-2-2-1-0-0",bassGuide:"Turnaround, relance le cycle."}]},
+  {id:"starter-ballade-g",name:"Ballade pop 4 accords en Sol",style:"starter",tempo:78,feel:"ballade",difficulty:1,
+    description:"La boucle I-V-vi-IV, colonne vertébrale de centaines de chansons. Accords ouverts qui résonnent.",
+    chords:[
+      {name:"G",beats:4,voicing:"3-2-0-0-0-3",bassGuide:"Tonique, stable."},
+      {name:"D",beats:4,voicing:"x-x-0-2-3-2",bassGuide:"La dominante ouvre."},
+      {name:"Em",beats:4,voicing:"0-2-2-0-0-0",bassGuide:"Le relatif mineur, mélancolie."},
+      {name:"C",beats:4,voicing:"x-3-2-0-1-0",bassGuide:"Le IV respire avant de reboucler."}]},
+  {id:"starter-folk-em",name:"Feu de camp en Mi mineur",style:"starter",tempo:100,feel:"folk strumming",difficulty:1,
+    description:"i-bVI-bIII-bVII : la boucle mineure universelle. Tout en accords ouverts.",
+    chords:[
+      {name:"Em",beats:4,voicing:"0-2-2-0-0-0",bassGuide:"Mi mineur plein manche."},
+      {name:"C",beats:4,voicing:"x-3-2-0-1-0",bassGuide:"bVI lumineux."},
+      {name:"G",beats:4,voicing:"3-2-0-0-0-3",bassGuide:"bIII, presque majeur."},
+      {name:"D",beats:4,voicing:"x-x-0-2-3-2",bassGuide:"bVII, relance."}]},
+  {id:"starter-andalouse",name:"Cadence andalouse en Mi",style:"starter",tempo:100,feel:"flamenco",difficulty:1,
+    description:"iv-bIII-bII-I : la descente flamenco/phrygienne. Laisse sonner le Mi final.",
+    chords:[
+      {name:"Am",beats:4,voicing:"x-0-2-2-1-0",bassGuide:"Départ mineur."},
+      {name:"G",beats:4,voicing:"3-2-0-0-0-3",bassGuide:"Descente."},
+      {name:"F",beats:4,voicing:"1-3-3-2-1-1",bassGuide:"Le seul barré : passe vite."},
+      {name:"E",beats:4,voicing:"0-2-2-1-0-0",bassGuide:"Repos phrygien sur Mi MAJEUR."}]},
+  {id:"starter-rock-e",name:"Rock 3 accords en Mi",style:"starter",tempo:130,feel:"rock droit",difficulty:1,
+    description:"I-IV-bVII : le rock d'ouverture de festival. Gros accords, gros son.",
+    chords:[
+      {name:"E",beats:8,voicing:"0-2-2-1-0-0",bassGuide:"Cale-toi sur la grosse caisse."},
+      {name:"A",beats:4,voicing:"x-0-2-2-2-0",bassGuide:"Le IV soulève."},
+      {name:"D",beats:4,voicing:"x-x-0-2-3-2",bassGuide:"bVII avant de replonger."}]},
+  {id:"starter-vamp-am",name:"Vamp mineur 2 accords",style:"starter",tempo:88,feel:"groove tranquille",difficulty:1,
+    description:"i-IV en dorien : deux accords, mille solos possibles. Le terrain de jeu idéal pour les modes.",
+    chords:[
+      {name:"Am7",beats:8,voicing:"x-0-2-0-1-0",bassGuide:"Pédale de La, tout simple."},
+      {name:"D7",beats:8,voicing:"x-x-0-2-1-2",bassGuide:"La 6te majeure (F#) = couleur dorienne."}]}
+];
+STARTER_PROGS.forEach(p=>PROGRESSIONS.push(p));
+
+/* ============================================================
+   2d. NIVEAUX AVANCÉ (4) & MAÎTRE (5) — créations maison sur
+   concepts harmoniques génériques, voicings vérifiés
+   ============================================================ */
+const EXPERT_PROGS=[
+  {id:"adv-cycle-tierces",name:"Cycle par tierces majeures",style:"jazz",tempo:132,feel:"swing rapide",difficulty:4,
+    description:"Trois toniques équidistantes (C, Ab, E) qui divisent l'octave en parts égales : le cycle se referme exactement. Une géométrie plus qu'une progression.",
+    chords:[
+      {name:"Cmaj7",beats:2,voicing:"x-3-5-4-5-3",bassGuide:"Tonique 1."},
+      {name:"Eb7",beats:2,voicing:"x-6-5-6-4-x",bassGuide:"V7 de Ab."},
+      {name:"Abmaj7",beats:2,voicing:"4-x-5-5-4-x",bassGuide:"Tonique 2 : tierce majeure plus bas."},
+      {name:"B7",beats:2,voicing:"x-2-1-2-0-2",bassGuide:"V7 de E."},
+      {name:"Emaj7",beats:2,voicing:"x-7-6-8-x-7",bassGuide:"Tonique 3."},
+      {name:"G7",beats:2,voicing:"3-x-3-4-3-x",bassGuide:"V7 de C : le cycle se referme."},
+      {name:"Cmaj7",beats:4,voicing:"x-3-5-4-5-3",bassGuide:"Retour. Recompte tes doigts."}]},
+  {id:"adv-quartal-dorien",name:"Quartal dorien flottant",style:"fusion",tempo:96,feel:"modal planant",difficulty:4,
+    description:"Empilements de quartes façon McCoy Tyner : plus de tierces, l'harmonie devient ambiguë et ouverte. Improvise en La dorien partout.",
+    chords:[
+      {name:"Am11",beats:4,voicing:"x-0-5-5-3-0",bassGuide:"Quartes + cordes à vide qui frottent."},
+      {name:"Dsus2",beats:4,voicing:"x-5-7-7-5-x",bassGuide:"Ni majeur ni mineur : suspendu."},
+      {name:"Em11",beats:4,voicing:"0-0-5-7-5-0",bassGuide:"Mi grave ET aigu à vide : drone."},
+      {name:"G6/9",beats:4,voicing:"3-x-2-2-3-3",bassGuide:"Résolution douce, jamais définitive."}]},
+  {id:"adv-ii-v-altere",name:"ii-V altéré en Do mineur",style:"jazz",tempo:126,feel:"bebop tendu",difficulty:4,
+    description:"Le G7alt concentre b9, #5 : toutes les tensions qui tirent vers Cm. Gamme altérée sur le V, mineur mélodique sur le i.",
+    chords:[
+      {name:"Dm7b5",beats:2,voicing:"x-5-6-5-6-x",bassGuide:"ii demi-diminué."},
+      {name:"G7alt",beats:2,voicing:"3-x-3-4-4-4",bassGuide:"b13 + b9 empilés : tension maximale."},
+      {name:"CmMaj7",beats:4,voicing:"x-3-1-0-0-x",bassGuide:"Repos mineur-majeur, cordes à vide."}]},
+  {id:"master-constant-lydien",name:"Constant structure lydienne",style:"fusion",tempo:96,feel:"planant hors tonalité",difficulty:5,
+    description:"Le même voicing maj9#11 déplacé par quintes descendantes : aucune tonalité ne s'installe, la structure EST l'harmonie. Change de gamme lydienne à chaque accord.",
+    chords:[
+      {name:"Cmaj9#11",beats:4,voicing:"x-3-4-4-3-x",bassGuide:"Do lydien."},
+      {name:"Fmaj9#11",beats:4,voicing:"x-8-9-9-8-x",bassGuide:"Fa lydien : même forme, +5 cases."},
+      {name:"Bbmaj9#11",beats:4,voicing:"x-1-2-2-1-x",bassGuide:"Sib lydien."},
+      {name:"Ebmaj9#11",beats:4,voicing:"x-6-7-7-6-x",bassGuide:"Mib lydien, puis on reboucle."}]},
+  {id:"master-constant-varie",name:"Lydien par quintes — voicings variés",style:"fusion",tempo:96,feel:"voice-leading planant",difficulty:5,
+    description:"Les MÊMES accords que la constant structure, mais chaque voicing est différent : au lieu du planing parallèle, on entend les voix se déplacer au plus court. Compare les deux versions.",
+    chords:[
+      {name:"Cmaj9#11",beats:4,voicing:"x-3-4-4-3-x",bassGuide:"Point de départ commun aux deux versions."},
+      {name:"Fmaj7#11",beats:4,voicing:"1-x-2-2-0-x",bassGuide:"Le Si à VIDE = le #11 qui résonne."},
+      {name:"Bbmaj9#11",beats:4,voicing:"x-1-0-2-1-0",bassGuide:"Deux cordes à vide : le voicing respire."},
+      {name:"Ebmaj7#11",beats:4,voicing:"x-6-5-7-x-5",bassGuide:"Forme éclatée, puis retour au départ."}]},
+  {id:"master-tritone-chain",name:"Substitutions tritoniques en chaîne",style:"jazz",tempo:138,feel:"bebop chromatique",difficulty:5,
+    description:"Chaque dominante est remplacée par celle à un triton : la basse descend chromatiquement pendant que l'harmonie garde ses tritons communs. Vitesse + oreille.",
+    chords:[
+      {name:"Dm9",beats:2,voicing:"x-5-3-5-5-x",bassGuide:"ii."},
+      {name:"Db9",beats:2,voicing:"x-4-3-4-4-x",bassGuide:"Sub tritonique de G7 : basse chromatique."},
+      {name:"Cmaj9",beats:4,voicing:"x-3-2-4-3-x",bassGuide:"I. La basse a fait D-Db-C."},
+      {name:"Cm9",beats:2,voicing:"x-3-1-3-3-x",bassGuide:"Bascule mineure."},
+      {name:"B9",beats:2,voicing:"x-2-1-2-2-x",bassGuide:"Sub de F7 : re-chromatisme."},
+      {name:"Bbmaj9",beats:4,voicing:"x-1-0-2-1-x",bassGuide:"Atterrissage un ton plus bas."}]},
+  {id:"master-hongrois",name:"Mineur hongrois véloce",style:"jazz",tempo:144,feel:"néoclassique nerveux",difficulty:5,
+    description:"i - #iv° - V7b9 : le dim7 sur #4 et la seconde augmentée du mineur hongrois. Arpèges balayés obligatoires pour suivre.",
+    chords:[
+      {name:"CmMaj7",beats:2,voicing:"x-3-1-0-0-x",bassGuide:"Tonique tendue."},
+      {name:"F#dim7",beats:2,voicing:"2-x-1-2-1-x",bassGuide:"Le #4 diminué : pivot symétrique."},
+      {name:"G7b9",beats:2,voicing:"3-x-3-1-0-1",bassGuide:"Dominante b9, résolution imminente."},
+      {name:"CmMaj7",beats:2,voicing:"x-3-1-0-0-x",bassGuide:"Et ça repart. Vite."}]},
+  {id:"master-septhuit",name:"7/8 hypnotique en Mi",style:"fusion",tempo:120,feel:"métrique impaire 3+2+2",difficulty:5,
+    description:"Chaque accord dure une mesure de 7/8 découpée 3+2+2 croches. Compte 1-2-3, 1-2, 1-2 jusqu'à ce que ton corps le fasse tout seul — puis improvise en Mi dorien.",
+    chords:[
+      {name:"Em9",beats:3.5,voicing:"x-7-5-7-7-x",bassGuide:"Ancre. Sens le 3+2+2."},
+      {name:"D6/9",beats:3.5,voicing:"x-5-4-4-5-x",bassGuide:"bVII lumineux, même carrure."},
+      {name:"Cmaj9#11",beats:3.5,voicing:"x-3-4-4-3-x",bassGuide:"Le #11 flotte sur le rythme boiteux."},
+      {name:"Bm11",beats:3.5,voicing:"x-2-2-2-3-x",bassGuide:"Suspension avant de reboucler."}]},
+  {id:"master-polytonal",name:"Polytonalité sur pédale de Do",style:"fusion",tempo:72,feel:"planant vertical",difficulty:5,
+    description:"Des triades majeures étrangères (D, E, F#) posées sur une basse Do immobile : deux tonalités sonnent en même temps. L'échelle de luminosité lydienne qui monte.",
+    chords:[
+      {name:"D/C",beats:4,voicing:"x-3-0-2-3-2",bassGuide:"Triade de Ré sur Do : lydien pur (9, #11, 13)."},
+      {name:"E/C",beats:4,voicing:"x-3-2-1-0-0",bassGuide:"Triade de Mi sur Do : maj7#5, rêveur."},
+      {name:"F#/C",beats:4,voicing:"x-3-4-3-2-x",bassGuide:"Triton complet contre la pédale : le sommet de tension."},
+      {name:"D/C",beats:4,voicing:"x-3-0-2-3-2",bassGuide:"Redescente d'un cran : respiration."}]},
+  {id:"master-drop2",name:"Drop-2 en montée (Cmaj7)",style:"jazz",tempo:92,feel:"voice-leading vertical",difficulty:5,
+    description:"Le même Cmaj7 gravit le manche par renversements drop-2 sur les 4 cordes aiguës, puis G7 relance. Le but : entendre le voice-leading, pas les positions.",
+    chords:[
+      {name:"Cmaj7 ①",beats:4,voicing:"x-x-2-4-1-3",bassGuide:"1er renversement, bas du manche."},
+      {name:"Cmaj7 ②",beats:4,voicing:"x-x-5-5-5-7",bassGuide:"Renversement suivant : chaque voix monte au plus court."},
+      {name:"Cmaj7 ③",beats:4,voicing:"x-x-10-9-8-7",bassGuide:"Position haute, fondamentale au grave du bloc."},
+      {name:"G7",beats:4,voicing:"x-x-3-4-3-3",bassGuide:"La dominante te ramène en bas. Recommence."}]}
+];
+EXPERT_PROGS.forEach(p=>PROGRESSIONS.push(p));
+
+/* ============================================================
+   2e. MANOUCHE — grilles et voicings Django importés du module
+   Pompe de Guitar Modes v7 (m6 sans quinte, shells de dominante).
+   La basse alterne fondamentale/quinte : voicings ordonnés pour ça.
+   ============================================================ */
+const MANOUCHE_VOICINGS={
+  // frets grave->aigu ; ordonnés basse=1re note, quinte/alternée=2e
+  "Am6":"5-x-4-5-5-x","Dm6":"x-5-3-4-3-x","E7":"x-7-6-7-5-x","A7":"5-x-5-6-5-x",
+  "D7":"x-5-4-5-x-x","Gm6":"3-x-2-3-3-x","Cm6":"x-3-1-2-1-x","C6":"x-3-2-2-1-x",
+  "G7":"3-x-3-4-x-x","C7":"x-3-2-3-x-x","F6":"1-x-0-2-1-x","G6":"3-x-2-4-3-x",
+  "C#dim7":"x-4-5-3-5-x","F#dim7":"2-x-1-2-1-x"
+};
+const MANOUCHE_GRIDS=[
+  {id:"man-minor-swing",name:"Minor Swing",tempo:150,difficulty:2,
+    desc:"LE standard d'entrée du jazz manouche. Sur les dominantes : la mineure harmonique de leur cible (E7 → La min. harmonique).",
+    bars:["Am6","Am6","Dm6","Dm6","E7","E7","Am6","Am6","Dm6","Dm6","Am6","Am6","E7","E7","Am6","E7"]},
+  {id:"man-yeux-noirs",name:"Grande mélodie tzigane en Ré m",tempo:140,difficulty:2,
+    desc:"La grille du trad russe le plus joué en manouche. Ré mineure harmonique sur Dm6/A7 ; flash de Sol min. harm. sur le D7.",
+    bars:["A7","A7","Dm6","Dm6","A7","A7","Dm6","Dm6","D7","D7","Gm6","Gm6","Dm6","A7","Dm6","A7"]},
+  {id:"man-blues-mineur",name:"Blues mineur manouche",tempo:120,difficulty:1,
+    desc:"12 mesures en Sol m, pour improviser simple : penta mineure pour le fond, dorien pour aérer, min. harmonique sur le D7.",
+    bars:["Gm6","Gm6","Gm6","Gm6","Cm6","Cm6","Gm6","Gm6","D7","Cm6","Gm6","D7"]},
+  {id:"man-standard-c",name:"Standard de jam en Do",tempo:140,difficulty:2,
+    desc:"La 1re partie du standard n°1 des jams. Chaque dominante secondaire appelle la mineure harmonique de sa cible.",
+    bars:["C6","C6","E7","E7","A7","A7","Dm6","Dm6","E7","E7","Am6","Am6","D7","D7","Dm6","G7"]},
+  {id:"man-cycle-quintes",name:"Cycle de quintes swing",tempo:140,difficulty:2,
+    desc:"D7→G7→C7→F : 4 mesures par dominante, le cycle fait le solo. Une phrase, puis la MÊME descendue d'une quarte.",
+    bars:["D7","D7","D7","D7","G7","G7","G7","G7","C7","C7","C7","C7","F6","F6","F6","F6"]},
+  {id:"man-slow-sombre",name:"Slow sombre en Ré m",tempo:100,difficulty:1,
+    desc:"Lent et sombre : viser les notes longues, laisser sonner. Le passage au iv (Gm6) s'adoucit en dorien.",
+    bars:["Dm6","Dm6","Dm6","Dm6","Gm6","Gm6","Dm6","Dm6","A7","A7","Dm6","A7"]},
+  {id:"man-anatole",name:"Anatole (I-VI-II-V)",tempo:130,difficulty:1,
+    desc:"Le turnaround qui tourne tout seul. La boucle parfaite pour bosser UNE couleur à la fois, 4 mesures par tour.",
+    bars:["C6","A7","Dm6","G7"]},
+  {id:"man-vamp",name:"Vamp d'échauffement Am6-E7",tempo:110,difficulty:1,
+    desc:"Le laboratoire : poser la pompe, puis arpèges seuls, chromatismes ensuite. L'aller-retour Sol♮↔Sol# dans les doigts.",
+    bars:["Am6","Am6","E7","E7"]},
+  {id:"man-valse",name:"Valse à trois temps en La m",tempo:150,difficulty:3,bpb:3,
+    desc:"Pompe valse : la basse ne tombe qu'une fois par mesure — tes phrases ont de la place, ne remplis pas. Descente andalouse au 2e tour.",
+    bars:["Am6","Am6","Dm6","Dm6","E7","E7","Am6","Am6","Am6","G6","F6","E7","Am6","Dm6","E7","Am6"]},
+  {id:"man-anatole-dim",name:"Anatole + dim de passage",tempo:140,difficulty:3,
+    desc:"Le C#dim7 glissé entre le I et le ii : il ne résout pas, il POUSSE. Monte d'un demi-ton et tu es sur Dm6.",
+    bars:["C6","C#dim7","Dm6","G7","C6","C#dim7","Dm6","G7"]},
+  {id:"man-dim-monte",name:"Le dim qui monte (IV-#IVdim-I)",tempo:135,difficulty:3,
+    desc:"Le F#dim7 = un G7b9 sans fondamentale. Joue Do majeur harmonique dessus, tout tombe.",
+    bars:["C6","C6","F6","F#dim7","C6","A7","Dm6","G7"]}
+];
+MANOUCHE_GRIDS.forEach(g=>{
+  // Compression des mesures répétées en accords à durées longues
+  const bpb=g.bpb||4;
+  const chords=[];
+  g.bars.forEach(name=>{
+    const last=chords[chords.length-1];
+    if(last&&last.name===name&&last.beats<16)last.beats+=bpb;
+    else chords.push({name:name,beats:bpb,voicing:MANOUCHE_VOICINGS[name]||"x-x-x-x-x-x",bassGuide:""});
+  });
+  PROGRESSIONS.push({
+    id:g.id,name:g.name,style:"manouche",tempo:g.tempo,feel:bpb===3?"pompe valse":"pompe boum-tchik",
+    difficulty:g.difficulty,description:g.desc,chords:chords
+  });
+});
+
+/* ============================================================
+   2f. METAL & PUNK — sous-genres, power chords, son chug Djent
+   ============================================================ */
+const METAL_PROGS=[
+  {id:"metal-heavy-galop",name:"Galop héroïque en Mi",sub:"heavy",tempo:140,difficulty:2,
+    desc:"Croche-double-double au médiator, la signature heavy. Aller-retour strict, poignet relâché.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"C5",beats:4,voicing:"x-3-5-5-x-x"},{name:"D5",beats:4,voicing:"x-5-7-7-x-x"}],groove:"gallop"},
+  {id:"metal-heavy-phrygien",name:"Descente phrygienne",sub:"heavy",tempo:132,difficulty:2,
+    desc:"F5 → E5 : le demi-ton phrygien, LE son metal. Le bII écrase la tonique par en dessous.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"F5",beats:4,voicing:"1-3-3-x-x-x"},{name:"E5",beats:4,voicing:"0-2-2-x-x-x"}],groove:"gallop"},
+  {id:"metal-thrash-chrom",name:"Chromatique panique",sub:"thrash",tempo:170,difficulty:3,
+    desc:"Palm mute serré, tempo punitif. Le triton (Bb5) au milieu du chromatisme : pur thrash de la Bay Area.",
+    chords:[{name:"E5",beats:4,voicing:"0-2-2-x-x-x"},{name:"F5",beats:2,voicing:"1-3-3-x-x-x"},{name:"E5",beats:2,voicing:"0-2-2-x-x-x"},{name:"Bb5",beats:4,voicing:"x-1-3-3-x-x"},{name:"A5",beats:4,voicing:"x-0-2-2-x-x"}],groove:"metal"},
+  {id:"metal-doom-triton",name:"Triton du sabbat",sub:"doom",tempo:66,difficulty:1,
+    desc:"Le diabolus in musica à 66 bpm : deux accords, un triton, et le poids du monde. Laisse ressoner chaque coup.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"Bb5",beats:4,voicing:"x-1-3-3-x-x"},{name:"A5",beats:4,voicing:"x-0-2-2-x-x"}],groove:"doom"},
+  {id:"metal-doom-descente",name:"Descente funèbre en La",sub:"doom",tempo:58,difficulty:1,
+    desc:"i-bVII-bVI : la descente éolienne au ralenti extrême. Chaque accord est une pierre tombale.",
+    chords:[{name:"A5",beats:8,voicing:"x-0-2-2-x-x"},{name:"G5",beats:8,voicing:"3-5-5-x-x-x"},{name:"F5",beats:8,voicing:"1-3-3-x-x-x"},{name:"E5",beats:8,voicing:"0-2-2-x-x-x"}],groove:"doom"},
+  {id:"metal-djent-poly",name:"Polymétrie syncopée en Mi",sub:"djent",tempo:116,difficulty:4,
+    desc:"Accents déplacés sur une pulsation droite : le pied garde le 4/4, la main tombe ailleurs. Compte à voix haute au début.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"G5",beats:4,voicing:"3-5-5-x-x-x"},{name:"F#5",beats:4,voicing:"2-4-4-x-x-x"}],groove:"djent16"},
+  {id:"metal-djent-locrien",name:"Djent locrien",sub:"djent",tempo:112,difficulty:4,
+    desc:"La quinte diminuée comme couleur principale : le mode le plus instable sur le groove le plus asymétrique.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"Bb5",beats:4,voicing:"x-1-3-3-x-x"},{name:"F5",beats:4,voicing:"1-3-3-x-x-x"}],groove:"djent16"},
+  {id:"metal-core-breakdown",name:"Breakdown sur corde ouverte",sub:"metalcore",tempo:95,difficulty:2,
+    desc:"Silences pesants et accents let-ring : le breakdown vit dans ce qu'on NE joue PAS. Chugs sur le temps... puis à côté.",
+    chords:[{name:"E5",beats:8,voicing:"0-2-2-x-x-x"},{name:"C5",beats:4,voicing:"x-3-5-5-x-x"},{name:"D5",beats:4,voicing:"x-5-7-7-x-x"}],groove:"breakdown"},
+  {id:"metal-black-blast",name:"Blast glacial en Mi mineur",sub:"black",tempo:172,difficulty:4,
+    desc:"Blast beat + accords let-ring en trémolo : le mur de son atmosphérique. La guitare tient, la batterie mitraille.",
+    chords:[{name:"Em",beats:8,voicing:"0-2-2-0-0-0"},{name:"C",beats:8,voicing:"x-3-2-0-1-0"},{name:"Am",beats:8,voicing:"x-0-2-2-1-0"},{name:"B5",beats:8,voicing:"x-2-4-4-x-x"}],groove:"blast"},
+  {id:"punk-troisaccords",name:"Punk 1-4-5 en La",sub:"punk",tempo:165,difficulty:1,
+    desc:"Trois accords, downstrokes only, zéro question. Le d-beat pousse, tu suis. C'est tout et c'est énorme.",
+    chords:[{name:"A5",beats:8,voicing:"x-0-2-2-x-x"},{name:"D5",beats:4,voicing:"x-5-7-7-x-x"},{name:"E5",beats:4,voicing:"0-2-2-x-x-x"}],groove:"punk"},
+  {id:"punk-descente",name:"Punk mélodique descendant",sub:"punk",tempo:160,difficulty:1,
+    desc:"I-V-vi-IV à toute vitesse en power chords : la boucle pop passée à la disto. Chante par-dessus.",
+    chords:[{name:"C5",beats:4,voicing:"x-3-5-5-x-x"},{name:"G5",beats:4,voicing:"3-5-5-x-x-x"},{name:"A5",beats:4,voicing:"x-0-2-2-x-x"},{name:"F5",beats:4,voicing:"1-3-3-x-x-x"}],groove:"punk"}
+];
+const METAL_SUBS={heavy:"⚔️ Heavy",thrash:"⚡ Thrash",doom:"🕯️ Doom",djent:"🎛️ Djent",metalcore:"🧨 Metalcore",black:"❄️ Black",punk:"🧷 Punk"};
+/* ============================================================
+   2g. ROCKABILLY / PSYCHOBILLY & REGGAE — plans dédiés
+   ============================================================ */
+const BILLY_PROGS=[
+  {id:"rab-boogie-e",name:"Boogie 12 mesures en Mi",sub:"rockabilly",tempo:150,difficulty:1,groove:"rockabilly",
+    desc:"Le boogie de base : R-5-6-5 sur les cordes graves. Palm mute léger, aller-retour souple. Tout le rockabilly part de là.",
+    chords:[{name:"E",beats:16,voicing:"0-2-2-1-0-0"},{name:"A",beats:8,voicing:"x-0-2-2-2-0"},{name:"E",beats:8,voicing:"0-2-2-1-0-0"},
+      {name:"B7",beats:4,voicing:"x-2-1-2-0-2"},{name:"A",beats:4,voicing:"x-0-2-2-2-0"},{name:"E",beats:4,voicing:"0-2-2-1-0-0"},{name:"B7",beats:4,voicing:"x-2-1-2-0-2"}]},
+  {id:"rab-turnaround",name:"Turnaround rockabilly en La",sub:"rockabilly",tempo:145,difficulty:2,groove:"rockabilly",
+    desc:"I-VI-II-V en accords de 7e : la boucle qui relance sans fin. Idéal pour caser des plans hybrides picking.",
+    chords:[{name:"A",beats:4,voicing:"x-0-2-2-2-0"},{name:"F#7",beats:4,voicing:"2-4-2-3-2-2"},{name:"B7",beats:4,voicing:"x-2-1-2-0-2"},{name:"E7",beats:4,voicing:"0-2-0-1-0-0"}]},
+  {id:"rab-slow",name:"Slow rockabilly en Do",sub:"rockabilly",tempo:105,difficulty:1,groove:"rockabilly",
+    desc:"Tempo doux pour travailler le son : slapback dans la tête, notes qui claquent, laisse de l'air entre les coups.",
+    chords:[{name:"C",beats:8,voicing:"x-3-2-0-1-0"},{name:"Am",beats:8,voicing:"x-0-2-2-1-0"},{name:"F",beats:8,voicing:"1-3-3-2-1-1"},{name:"G7",beats:8,voicing:"3-2-0-0-0-1"}]},
+  {id:"psy-minor-e",name:"Psychobilly mineur en Mi",sub:"psychobilly",tempo:170,difficulty:2,groove:"psychobilly",
+    desc:"Boogie en mineur à toute vitesse, contrebasse slappée. La tension du mineur + le tempo punk : le cocktail Meteors.",
+    chords:[{name:"Em",beats:8,voicing:"0-2-2-0-0-0"},{name:"Am",beats:4,voicing:"x-0-2-2-1-0"},{name:"B7",beats:4,voicing:"x-2-1-2-0-2"}]},
+  {id:"psy-chromatique",name:"Descente chromatique horrifique",sub:"psychobilly",tempo:165,difficulty:3,groove:"psychobilly",
+    desc:"Am-Ab-G-F# : la descente chromatique de film d'horreur, jouée trop vite. Bassiste slappé indispensable.",
+    chords:[{name:"Am",beats:4,voicing:"x-0-2-2-1-0"},{name:"Ab",beats:4,voicing:"4-6-6-5-4-4"},{name:"G",beats:4,voicing:"3-2-0-0-0-3"},{name:"F#7",beats:4,voicing:"2-4-2-3-2-2"}]},
+  {id:"psy-surf",name:"Surf-billy en La mineur",sub:"psychobilly",tempo:160,difficulty:2,groove:"psychobilly",
+    desc:"i-bVI-bVII : la couleur surf/spaghetti passée au tempo psycho. Trémolo à fond, réverbe imaginaire à fond.",
+    chords:[{name:"Am",beats:8,voicing:"x-0-2-2-1-0"},{name:"F",beats:4,voicing:"1-3-3-2-1-1"},{name:"G",beats:4,voicing:"3-2-0-0-0-3"}]}
+];
+const REGGAE_PROGS=[
+  {id:"reg-onedrop-am",name:"One drop en La mineur",sub:"roots",tempo:74,difficulty:1,groove:"reggaeOneDrop",
+    desc:"La grosse caisse ne tombe QUE sur le 3 : tout l'espace est ailleurs. Skank sur les contretemps, basse ronde et grave.",
+    chords:[{name:"Am",beats:8,voicing:"x-0-2-2-1-0"},{name:"Dm",beats:8,voicing:"x-x-0-2-3-1"}]},
+  {id:"reg-roots-classic",name:"Roots I-IV-V en Sol",sub:"roots",tempo:78,difficulty:1,groove:"reggaeOneDrop",
+    desc:"Trois accords, beaucoup de vide. La difficulté est de NE PAS remplir : le contretemps fait tout le travail.",
+    chords:[{name:"G",beats:8,voicing:"3-2-0-0-0-3"},{name:"C",beats:4,voicing:"x-3-2-0-1-0"},{name:"D",beats:4,voicing:"x-x-0-2-3-2"}]},
+  {id:"reg-steppers",name:"Steppers militants en Ré m",sub:"roots",tempo:80,difficulty:2,groove:"reggaeSteppers",
+    desc:"Grosse caisse sur les 4 temps : ça marche au pas. Vamp de deux accords, la basse mène la mélodie.",
+    chords:[{name:"Dm",beats:8,voicing:"x-x-0-2-3-1"},{name:"Bb",beats:4,voicing:"x-1-3-3-3-1"},{name:"C",beats:4,voicing:"x-3-2-0-1-0"}]},
+  {id:"reg-ska",name:"Ska upstroke en Do",sub:"ska",tempo:145,difficulty:2,groove:"ska",
+    desc:"Le contretemps devient une mitraillette. Poignet léger, uniquement des coups vers le haut sur les cordes aiguës.",
+    chords:[{name:"C",beats:4,voicing:"x-3-2-0-1-0"},{name:"Am",beats:4,voicing:"x-0-2-2-1-0"},{name:"F",beats:4,voicing:"1-3-3-2-1-1"},{name:"G",beats:4,voicing:"3-2-0-0-0-3"}]},
+  {id:"reg-rocksteady",name:"Rocksteady doux en Fa",sub:"ska",tempo:92,difficulty:1,groove:"reggaeOneDrop",
+    desc:"Entre le ska et le reggae : plus lent, plus suave. Les accords majeurs 7 adoucissent tout.",
+    chords:[{name:"Fmaj7",beats:8,voicing:"1-x-2-2-1-x"},{name:"Dm7",beats:8,voicing:"x-5-3-5-6-x"},{name:"Gm7",beats:8,voicing:"3-x-3-3-3-x"},{name:"C7",beats:8,voicing:"x-3-2-3-1-x"}]},
+  {id:"reg-dub",name:"Dub minimal en Mi m",sub:"dub",tempo:70,difficulty:1,groove:"dub",
+    desc:"Presque rien : une basse, un skank par mesure, du silence. Le vide EST l'instrument. Parfait pour poser des nappes.",
+    chords:[{name:"Em",beats:16,voicing:"0-2-2-0-0-0"},{name:"Am",beats:16,voicing:"x-0-2-2-1-0"}]}
+];
+const FUNK_PROGS=[
+  {id:"funk-one-e9",name:"Vamp sur Mi9 — The One",sub:"classique",tempo:104,difficulty:1,groove:"funkJB",
+    desc:"UN accord, SEIZE temps : tout est dans le placement. Le premier temps est sacré, le reste est de la conversation. Mi dorien ou penta pour improviser.",
+    chords:[{name:"E9",beats:16,voicing:"x-7-6-7-7-x"}]},
+  {id:"funk-two-chords",name:"Machine à deux accords",sub:"classique",tempo:106,difficulty:2,groove:"funkJB",
+    desc:"E9 → A13 : le déplacement le plus rentable du funk. Même position de main, la 13e ajoute l'air. Ghosts constants entre les stabs.",
+    chords:[{name:"E9",beats:8,voicing:"x-7-6-7-7-x"},{name:"A13",beats:8,voicing:"5-x-5-6-7-x"}]},
+  {id:"funk-dorien-dm",name:"Boucle dorienne en Ré m",sub:"classique",tempo:100,difficulty:2,groove:"funkJB",
+    desc:"Dm9 → G13 : le ii-V qui ne résout jamais — il tourne. LA couleur dorienne du funk : la 6te majeure (Si) sur accord mineur.",
+    chords:[{name:"Dm9",beats:8,voicing:"x-5-3-5-5-x"},{name:"G13",beats:8,voicing:"3-x-3-4-5-x"}]},
+  {id:"funk-pfunk-gras",name:"P-Funk lent et gras",sub:"pfunk",tempo:78,difficulty:2,groove:"funkJB",
+    desc:"78 bpm : le pocket profond. Chaque note de basse est une décision. C9 → Bb9, laisse le vide travailler entre les coups.",
+    chords:[{name:"C9",beats:8,voicing:"x-3-2-3-3-x"},{name:"Bb9",beats:8,voicing:"x-1-0-1-1-x"}]},
+  {id:"funk-hendrix",name:"Funk 7#9 psychédélique",sub:"pfunk",tempo:92,difficulty:3,groove:"funkrock",
+    desc:"Le 7#9 : la tierce majeure ET la tierce mineure en même temps. Fausse note institutionnalisée, pur psychédélisme funk.",
+    chords:[{name:"D7#9",beats:8,voicing:"x-5-4-5-6-x"},{name:"C9",beats:4,voicing:"x-3-2-3-3-x"},{name:"D7#9",beats:4,voicing:"x-5-4-5-6-x"}]},
+  {id:"funk-disco-bm",name:"Disco mineur quatre-sur-le-sol",sub:"disco",tempo:118,difficulty:2,groove:"disco",
+    desc:"Grosse caisse sur chaque temps, basse en octaves pompées, charley ouvert sur les contretemps : la formule complète.",
+    chords:[{name:"Bm7",beats:8,voicing:"x-2-0-2-3-x"},{name:"E9",beats:8,voicing:"x-7-6-7-7-x"}]},
+  {id:"funk-philly",name:"Montée Philly soul",sub:"disco",tempo:112,difficulty:2,groove:"disco",
+    desc:"Am7 → Bm7 → Cmaj7 → Bm7 : l'ascenseur diatonique du Philadelphia sound. Doux, luxueux, cordes imaginaires.",
+    chords:[{name:"Am7",beats:4,voicing:"x-0-2-0-1-0"},{name:"Bm7",beats:4,voicing:"x-2-0-2-3-x"},{name:"Cmaj7",beats:4,voicing:"x-3-2-0-0-0"},{name:"Bm7",beats:4,voicing:"x-2-0-2-3-x"}]},
+  {id:"funk-rock-e",name:"Funk-rock en Mi",sub:"funkrock",tempo:96,difficulty:3,groove:"funkrock",
+    desc:"Le 9 funky rencontre les power chords : stabs de E9 puis coups de boutoir G5-A5. Alterne finesse et muscle.",
+    chords:[{name:"E9",beats:8,voicing:"x-7-6-7-7-x"},{name:"G5",beats:2,voicing:"3-5-5-x-x-x"},{name:"A5",beats:2,voicing:"x-0-2-2-x-x"},{name:"E9",beats:4,voicing:"x-7-6-7-7-x"}]},
+  {id:"funk-slap-a",name:"Terrain de slap en La",sub:"funkrock",tempo:100,difficulty:2,groove:"funkJB",
+    desc:"Vamp minimal A7#9-ish pensé pour la BASSE : octaves, quintes et fondamentales se relaient. Pose ton pouce et cogne.",
+    chords:[{name:"A13",beats:16,voicing:"5-x-5-6-7-x"}]}
+];
+const FUNK_SUBS={classique:"🎸 Classique",pfunk:"🕶️ P-Funk",disco:"🪩 Disco",funkrock:"⚡ Funk-rock",biblio:"📚 Répertoire"};
+FUNK_PROGS.forEach(p=>PROGRESSIONS.push({
+  id:p.id,name:p.name,style:"funk",sub:p.sub,tempo:p.tempo,feel:FUNK_SUBS[p.sub].replace(/^\S+ /,""),
+  difficulty:p.difficulty,description:p.desc,groove:p.groove,
+  chords:p.chords.map(c=>({name:c.name,beats:c.beats,voicing:c.voicing,bassGuide:""}))}));
+
+const BILLY_SUBS={rockabilly:"🕺 Rockabilly",psychobilly:"💀 Psychobilly"};
+const REGGAE_SUBS={roots:"🌿 Roots",ska:"🎺 Ska / Rocksteady",dub:"🔊 Dub"};
+BILLY_PROGS.forEach(p=>PROGRESSIONS.push({
+  id:p.id,name:p.name,style:"billy",sub:p.sub,tempo:p.tempo,feel:BILLY_SUBS[p.sub].replace(/^\S+ /,""),
+  difficulty:p.difficulty,description:p.desc,groove:p.groove,
+  chords:p.chords.map(c=>({name:c.name,beats:c.beats,voicing:c.voicing,bassGuide:""}))}));
+REGGAE_PROGS.forEach(p=>PROGRESSIONS.push({
+  id:p.id,name:p.name,style:"reggae",sub:p.sub,tempo:p.tempo,feel:REGGAE_SUBS[p.sub].replace(/^\S+ /,""),
+  difficulty:p.difficulty,description:p.desc,groove:p.groove,
+  chords:p.chords.map(c=>({name:c.name,beats:c.beats,voicing:c.voicing,bassGuide:""}))}));
+
+METAL_PROGS.forEach(m=>{
+  PROGRESSIONS.push({
+    id:m.id,name:m.name,style:m.sub==="punk"?"punk":"metal",sub:m.sub,tempo:m.tempo,
+    feel:METAL_SUBS[m.sub].replace(/^\S+ /,""),difficulty:m.difficulty,description:m.desc,
+    chords:m.chords.map(c=>({name:c.name,beats:c.beats,voicing:c.voicing,bassGuide:""})),
+    groove:m.groove
+  });
+});
+
+
+/* Accords diatoniques (empilement de tierces) — repris de modal-morpher */
+const DEGREE_LABELS=["I","II","III","IV","V","VI","VII","VIII"];
+function stackChordSemitones(formula,degIdx){
+  const out=[];const n=formula.length;
+  for(let step=0;step<4;step++){
+    const idx=(degIdx+step*2)%n;
+    const octaves=Math.floor((degIdx+step*2)/n);
+    out.push(((formula[idx]+12*octaves)-formula[degIdx]+1200)%12);
+  }
+  return out;
+}
+function nameChordQuality(iv){
+  const third=iv[1],fifth=iv[2],seventh=iv[3];
+  let q;
+  if(third===4&&fifth===7)q="maj";else if(third===3&&fifth===7)q="min";
+  else if(third===3&&fifth===6)q="dim";else if(third===4&&fifth===8)q="aug";else q="?";
+  const map={maj:{11:"maj7",10:"7"},min:{10:"m7",11:"mMaj7"},dim:{9:"dim7",10:"m7b5"},aug:{10:"aug7",11:"augMaj7"}};
+  return (map[q]&&map[q][seventh])?map[q][seventh]:q;
+}
+/* Cherche une position jouable : fenêtre de frettes + cordes à vide,
+   fondamentale obligatoire sur la corde la plus grave JOUÉE (les cordes
+   en dessous sont étouffées ×), position la plus basse possible. */
+const OPEN_PCS=[4,9,2,7,11,4]; // E A D G B e
+function findVoicing(pcs){
+  function candidates(s,start,end){
+    const c=[];
+    if(pcs.includes(OPEN_PCS[s]))c.push(0);
+    for(let f=Math.max(1,start);f<=end;f++){if(pcs.includes((OPEN_PCS[s]+f)%12))c.push(f);}
+    return c;
+  }
+  let best=null;
+  for(let span=2;span<=3;span++){
+    for(let start=0;start<=9;start++){
+      const end=start+span;
+      // essayer chaque corde de basse possible (E,A,D,G) portant la fondamentale
+      for(let b=0;b<4;b++){
+        const rootCands=candidates(b,start,end).filter(f=>((OPEN_PCS[b]+f)%12)===pcs[0]);
+        if(!rootCands.length)continue;
+        const frets=new Array(6).fill(null);
+        frets[b]=Math.min(...rootCands);
+        let covered=1;
+        for(let s=b+1;s<6;s++){
+          const c=candidates(s,start,end);
+          if(c.length){frets[s]=Math.min(...c);covered++;}
+        }
+        if(covered<3)continue;
+        // Position basse fortement favorisée : une forme ouverte à 5 cordes
+        // bat une forme à 6 cordes en haut de manche (plus idiomatique).
+        const score=covered*100-start*40-b*5;
+        if(!best||score>best.score)best={frets,score};
+      }
+    }
+  }
+  if(!best)return null;
+  return best.frets.map(f=>f===null?"x":String(f)).join("-");
+}
+function buildMorpherChords(prog){
+  const m=SCALES[prog.morpher.family].modes[prog.morpher.modeIdx];
+  const rootPc=appState.morpherRoot;
+  return prog.morpher.degrees.map(deg=>{
+    const iv=stackChordSemitones(m.formula,deg);
+    const sym=nameChordQuality(iv);
+    const chordRoot=(rootPc+m.formula[deg])%12;
+    const pcs=iv.map(s=>(chordRoot+s)%12);
+    const name=NOTES[chordRoot]+(sym==="maj"?"":sym==="min"?"m":sym);
+    return {name:name,beats:4,voicing:findVoicing(pcs)||"x-x-x-x-x-x",
+      bassGuide:DEGREE_LABELS[deg]+" du mode"};
+  });
+}
+function progChords(prog){return prog.morpher?buildMorpherChords(prog):prog.chords;}
+
+/* Voicing "x-8-9-7-5-5" (corde grave -> aiguë) => notes MIDI (accordage standard) */
+const STD_TUNING_MIDI=[40,45,50,55,59,64]; // E A D G B e
+function parseVoicing(v){
+  if(!v) return [];
+  const parts=String(v).toLowerCase().split("-");
+  const out=[];
+  parts.forEach((p,i)=>{
+    if(p==="x"||i>5) return;
+    const f=parseInt(p,10);
+    if(!isNaN(f)) out.push(STD_TUNING_MIDI[i]+f);
+  });
+  return out; // MIDI ascendant (ordre des cordes)
+}
+
+/* ============================================================
+   3. MOTEUR AUDIO — repris de Guitar Modes v7 :
+      - Guitare : Karplus-Strong rendu OFFLINE en buffer + cache (fiable, zéro glitch)
+      - Basse : synthé "finger" (saws désaccordées + sine + filtre env)
+      - Batterie : kits synthèse (acoustic/rock/metal/jazz)
+      - Piano : FM Rhodes
+      - Offset minimum 80ms sur chaque note : absorbe le resume async d'Android
+   ============================================================ */
+let audioCtx=null, masterGain=null;
+const gains={};
+function midiFreq(m){return 440*Math.pow(2,(m-69)/12);}
+function getAudio(){
+  if(!audioCtx||audioCtx.state==="closed"){
+    // latencyHint 'playback' : buffer audio système LARGE. La latence monte
+    // (~100-200ms, sans importance pour un accompagnement) mais les underruns
+    // du thread audio — LA cause des craquements sur mobile — disparaissent.
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"playback"});
+    const limiter=audioCtx.createDynamicsCompressor();
+    limiter.threshold.value=-10; limiter.knee.value=8;
+    limiter.ratio.value=16; limiter.attack.value=0.002; limiter.release.value=0.12;
+    limiter.connect(audioCtx.destination);
+    masterGain=audioCtx.createGain();masterGain.gain.value=0.8;masterGain.connect(limiter);
+    // Reverb légère : simple écho feedback (2 nœuds) au lieu d'une convolution
+    // 2s stéréo qui tournait en permanence (très coûteuse sur téléphone).
+    const echo=audioCtx.createDelay(0.5);echo.delayTime.value=0.16;
+    const echoFb=audioCtx.createGain();echoFb.gain.value=0.32;
+    const echoLp=audioCtx.createBiquadFilter();echoLp.type="lowpass";echoLp.frequency.value=2600;
+    const echoOut=audioCtx.createGain();echoOut.gain.value=0.13;
+    echo.connect(echoLp);echoLp.connect(echoFb);echoFb.connect(echo);
+    echoLp.connect(echoOut);echoOut.connect(masterGain);
+    ["drums","bass","guitar","piano"].forEach(name=>{
+      const g=audioCtx.createGain();
+      g.gain.value=({drums:0.65,bass:0.7,guitar:0.7,piano:0.72})[name];
+      g.connect(masterGain);
+      const send=audioCtx.createGain();send.gain.value=(name==="drums")?0.03:0.22;
+      g.connect(send);send.connect(echo);
+      gains[name]=g;
+    });
+    _ksCache.clear();_bassCache.clear();_drumCache.clear();
+    // Watchdog Android : réveil si l'OS suspend en cours de lecture
+    audioCtx.addEventListener("statechange",()=>{
+      if(playing&&audioCtx.state==="suspended"){try{audioCtx.resume();}catch(e){}}
+    });
+  }
+  if(audioCtx.state==="suspended"){try{audioCtx.resume();}catch(e){}}
+  return audioCtx;
+}
+
+/* ---- GUITARE : Karplus-Strong offline (méthode Guitar Modes) ---- */
+const _KS_RENDER_SEC=3.2;
+const _ksCache=new Map();
+function _ksRender(midi){
+  const key="e|"+midi;
+  const hit=_ksCache.get(key);
+  if(hit){_ksCache.delete(key);_ksCache.set(key,hit);return hit;}
+  const ctx=getAudio();
+  const sr=ctx.sampleRate;
+  const freq=midiFreq(midi);
+  const totalSamples=Math.floor(sr*_KS_RENDER_SEC);
+  const output=new Float32Array(totalSamples);
+  // Deux cordes très légèrement désaccordées = battements naturels + corps
+  const detunes=[1.0,1.0016];
+  const mixG=[1.0,0.82];
+  const alpha=0.498;
+  for(let s=0;s<detunes.length;s++){
+    const P=Math.max(2,Math.round(sr/(freq*detunes[s])));
+    const delay=new Float32Array(P);
+    for(let i=0;i<P;i++)delay[i]=Math.random()*2-1; // excitation "acoustic"
+    let wi=0;const gm=mixG[s];
+    for(let n=0;n<totalSamples;n++){
+      const ni=(wi+1)%P;
+      const filtered=alpha*(delay[wi]+delay[ni]);
+      output[n]+=filtered*gm;
+      delay[wi]=filtered;
+      wi=ni;
+    }
+  }
+  // Attaque de médiator : court burst décroissant pour la définition
+  const pickN=Math.floor(sr*0.006);
+  for(let i=0;i<pickN;i++)output[i]+=(Math.random()*2-1)*0.45*(1-i/pickN);
+  // EQ de corps bakée offline : coupe-bas, corps, présence
+  const hp=_biquad("highpass",70,sr,0.7);
+  const bodyLo=_biquad("peaking",110,sr,1.0,3);
+  const bodyMid=_biquad("peaking",220,sr,1.1,3.5);
+  const pres=_biquad("peaking",2600,sr,0.8,3);
+  for(let i=0;i<totalSamples;i++){
+    let x=output[i];x=hp.run(x);x=bodyLo.run(x);x=bodyMid.run(x);x=pres.run(x);output[i]=x;
+  }
+  let maxAbs=0.001;
+  for(let i=0;i<totalSamples;i++){const a=Math.abs(output[i]);if(a>maxAbs)maxAbs=a;}
+  const norm=0.30/maxAbs;
+  const attackSamples=Math.floor(sr*0.003);
+  for(let i=0;i<totalSamples;i++){
+    let env=norm;
+    if(i<attackSamples)env*=i/attackSamples;
+    output[i]*=env;
+  }
+  const buf=ctx.createBuffer(1,totalSamples,sr);
+  buf.getChannelData(0).set(output);
+  _ksCache.set(key,buf);
+  if(_ksCache.size>40){const oldest=_ksCache.keys().next().value;_ksCache.delete(oldest);}
+  return buf;
+}
+function playGuitarMidi(midi,duration,startTime,vel){
+  const ctx=getAudio();
+  const t=ctx.currentTime+Math.max(0.08,startTime); // offset anti-Android
+  const audioBuf=_ksRender(midi);
+  const playSec=Math.min(duration*1.8,_KS_RENDER_SEC);
+  const src=ctx.createBufferSource();src.buffer=audioBuf;
+  const g=ctx.createGain();
+  const level=0.55*(vel||1);
+  g.gain.setValueAtTime(level,t);
+  if(playSec<_KS_RENDER_SEC-0.01){
+    g.gain.setValueAtTime(level,t+Math.max(0.01,playSec-0.06));
+    g.gain.linearRampToValueAtTime(0.0001,t+playSec);
+  }
+  src.connect(g);g.connect(gains.guitar);
+  src.start(t);src.stop(t+playSec+0.05);
+  setTimeout(()=>{try{g.disconnect();}catch(e){}},
+    Math.max(120,(t-ctx.currentTime+playSec+0.3)*1000));
+}
+
+
+/* ---- CHUG METAL/DJENT : adapté du module Djent de Guitar Modes,
+   mais PRÉ-RENDU en buffer JS pur (architecture anti-craquement).
+   Recettes conservées : saws détunées + quinte (power chord dans le son),
+   palm-mute proportionnel à la note, hard-clip asymétrique, couche claire
+   qui porte la hauteur, clic de médiator, soft-clip de bus. ---- */
+/* Timbres de chug sélectionnables (le "son d'ampli") */
+const CHUG_TONES={
+  classic:{label:"Classic (heavy)",pre:5.5,k:135,drive:3.4,peakF:850,peakG:9,open:1.0,close:1.0,clear:0.48,fizz:0},
+  djent:{label:"Djent (moderne)",pre:7.5,k:220,drive:4.6,peakF:1200,peakG:11,open:1.25,close:0.85,clear:0.60,fizz:0.35},
+  thrash:{label:"Thrash (mordant)",pre:6.5,k:170,drive:4.0,peakF:1000,peakG:7,open:1.15,close:1.0,clear:0.42,fizz:0.2},
+  doom:{label:"Doom (fuzz épais)",pre:9.0,k:90,drive:2.6,peakF:520,peakG:12,open:0.75,close:1.25,clear:0.30,fizz:0},
+  punk:{label:"Punk (crunch)",pre:4.0,k:70,drive:2.2,peakF:1400,peakG:5,open:1.35,close:1.15,clear:0.55,fizz:0.1}
+};
+const _chugCache=new Map();
+function _biquad(type,f0,sr,Q,gainDb){
+  // Coefficients RBJ
+  const A=Math.pow(10,(gainDb||0)/40);
+  const w=2*Math.PI*f0/sr, cw=Math.cos(w), sw=Math.sin(w);
+  const alpha=sw/(2*(Q||0.707));
+  let b0,b1,b2,a0,a1,a2;
+  if(type==="lowpass"){b0=(1-cw)/2;b1=1-cw;b2=(1-cw)/2;a0=1+alpha;a1=-2*cw;a2=1-alpha;}
+  else if(type==="highpass"){b0=(1+cw)/2;b1=-(1+cw);b2=(1+cw)/2;a0=1+alpha;a1=-2*cw;a2=1-alpha;}
+  else{ // peaking
+    b0=1+alpha*A;b1=-2*cw;b2=1-alpha*A;a0=1+alpha/A;a1=-2*cw;a2=1-alpha/A;
+  }
+  const c={b0:b0/a0,b1:b1/a0,b2:b2/a0,a1:a1/a0,a2:a2/a0,x1:0,x2:0,y1:0,y2:0};
+  c.run=x=>{const y=c.b0*x+c.b1*c.x1+c.b2*c.x2-c.a1*c.y1-c.a2*c.y2;
+    c.x2=c.x1;c.x1=x;c.y2=c.y1;c.y1=y;return y;};
+  return c;
+}
+function _chugRender(midi,variant,toneKey){
+  // variant: 0=chug palm-muté, 1=accent, 2=let-ring ; toneKey = timbre d'ampli
+  const T=CHUG_TONES[toneKey||appState.chugTone]||CHUG_TONES.classic;
+  const key="c|"+midi+"|"+variant+"|"+(toneKey||appState.chugTone);
+  const hit=_chugCache.get(key);
+  if(hit){_chugCache.delete(key);_chugCache.set(key,hit);return hit;}
+  const ctx=getAudio(); const sr=ctx.sampleRate;
+  const freq=midiFreq(midi), fifth=freq*Math.pow(2,7/12);
+  const dur=variant===2?0.70:(variant===1?0.32:0.24);
+  const clrDur=variant===2?0.95:(variant===1?0.60:0.50);
+  const peak=variant===1?0.9:(variant===2?0.85:0.6);
+  const N=Math.floor(sr*(Math.max(dur,clrDur)+0.06));
+  const out=new Float32Array(N);
+  // Palm-mute proportionnel à la note (leçon Guitar Modes : réf 62 Hz)
+  const pitchK=Math.max(0.75,Math.min(1.6,freq/62));
+  const fOpen=(variant===2?3600:(variant===1?3000:2200))*pitchK*T.open;
+  const fClose=Math.max(420,950*pitchK*T.close);
+  // Filtres de la chaîne disto
+  const pk=_biquad("peaking",T.peakF,sr,1.1,T.peakG);
+  const hp90=_biquad("highpass",90,sr,0.7);
+  const hp40=_biquad("highpass",40,sr,0.6);
+  const clrLp=_biquad("lowpass",3600,sr,0.6);
+  let ph1=0,ph2=0,ph5=0,phS=0,phC=0,phC2=0,lpState=0;
+  const d1=freq*Math.pow(2,-7/1200)/sr, d2=freq*Math.pow(2,7/1200)/sr;
+  const d5=fifth*Math.pow(2,4/1200)/sr, dS=freq*0.5/sr;
+  const dC=freq*2/sr, dC2=freq/sr;
+  const k=T.k;
+  for(let i=0;i<N;i++){
+    const tS=i/sr;
+    // Oscillateurs
+    const saw=v=>2*(v-Math.floor(v+0.5));
+    const tri=v=>2*Math.abs(2*(v-Math.floor(v+0.5)))-1;
+    let s=saw(ph1)+saw(ph2)+saw(ph5)*0.5+Math.sin(2*Math.PI*phS)*0.34;
+    ph1+=d1;ph2+=d2;ph5+=d5;phS+=dS;
+    // Enveloppe porte (leçon : tenir le drive au-dessus du seuil du clip)
+    let env;
+    if(tS<0.006)env=peak*(tS/0.006);
+    else if(tS<dur*(variant===2?0.5:0.8))env=peak;
+    else if(tS<dur)env=peak*Math.pow(0.001/peak,(tS-dur*(variant===2?0.5:0.8))/(dur*(variant===2?0.5:0.2)));
+    else env=0;
+    s*=env;
+    // Palm mute AVANT l'ampli : lowpass qui se referme
+    const prog=Math.min(1,tS/(dur*0.85));
+    const fc=fOpen*Math.pow(fClose/fOpen,prog);
+    const a=1-Math.exp(-2*Math.PI*Math.min(fc,sr*0.45)/sr);
+    lpState+=a*(s-lpState);
+    // Ampli : pré-gain + peaking + hard-clip asymétrique + post + HP90
+    let x=lpState*T.pre;
+    x=pk.run(x);
+    let y=(1+k)*x/(1+k*Math.abs(x));
+    y=Math.tanh(y*T.drive);
+    if(y>0.65)y=0.65+(y-0.65)*0.12;
+    if(y<-0.85)y=-0.85+(y+0.85)*0.25;
+    y=hp90.run(y*0.9*0.26);
+    // Couche claire (porte la hauteur sur petit haut-parleur)
+    let clrEnv;
+    if(tS<0.008)clrEnv=T.clear*(tS/0.008);
+    else clrEnv=T.clear*Math.pow(0.001/T.clear,Math.max(0,tS-0.008)/clrDur);
+    const clr=clrLp.run((tri(phC)+tri(phC2)*0.5))*clrEnv;
+    phC+=dC;phC2+=dC2;
+    // Clic de médiator
+    let click=0;
+    if(tS<0.02)click=(Math.random()*2-1)*(variant===1?0.20:0.12)*Math.exp(-tS/0.006);
+    // Bus : HP40 + soft-clip
+    // "fizz" : souffle haute fréquence des amplis modernes
+    const fizz=T.fizz?(Math.random()*2-1)*T.fizz*0.05*Math.exp(-tS/0.09):0;
+    let mix=hp40.run(y+clr+click+fizz);
+    mix=mix/Math.pow(1+Math.pow(Math.abs(mix),8),1/8);
+    out[i]=mix*0.8;
+  }
+  const buf=ctx.createBuffer(1,N,sr);
+  buf.getChannelData(0).set(out);
+  _chugCache.set(key,buf);
+  if(_chugCache.size>36){const oldest=_chugCache.keys().next().value;_chugCache.delete(oldest);}
+  return buf;
+}
+function playChug(midi,startTime,variant,vel,maxDur){
+  const ctx=getAudio();
+  const t=ctx.currentTime+Math.max(0.08,startTime);
+  const buf=_chugRender(Math.round(midi),variant||0,appState.chugTone);
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const g=ctx.createGain();
+  const lvl=(vel||1)*0.6; // chug atténué : laisse passer l'harmonie
+  g.gain.setValueAtTime(lvl,t);
+  let stopT=buf.duration;
+  // Staccato : si le coup suivant tombe avant la fin du buffer, on coupe le
+  // chug pour articuler (galop croche-double-double, blast, etc.)
+  if(maxDur&&maxDur<buf.duration){
+    const holdT=Math.max(0.025,maxDur*0.5); // ~50% de l'écart = staccato net + silence avant la note suivante
+    g.gain.setValueAtTime(lvl,t+holdT);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+Math.max(holdT+0.015,maxDur*0.8));
+    stopT=Math.min(buf.duration,maxDur);
+  }
+  src.connect(g);g.connect(gains.guitar);
+  src.start(t);src.stop(t+stopT+0.03);
+  setTimeout(()=>{try{g.disconnect();}catch(e){}},Math.max(100,(t-ctx.currentTime+stopT+0.2)*1000));
+}
+
+/* ---- BASSE : note PRÉ-RENDUE en buffer (échantillonnage JS pur, cache LRU) ----
+   Zéro oscillateur temps réel : chaque note = 1 BufferSource + 1 Gain. ---- */
+const _BASS_RENDER_SEC=2.0;
+const _bassCache=new Map();
+function _bassRender(midi){
+  const key="b|"+midi;
+  const hit=_bassCache.get(key);
+  if(hit){_bassCache.delete(key);_bassCache.set(key,hit);return hit;}
+  const ctx=getAudio();
+  const sr=ctx.sampleRate;
+  const freq=midiFreq(midi);
+  const N=Math.floor(sr*_BASS_RENDER_SEC);
+  const out=new Float32Array(N);
+  const loFactor=Math.max(0,Math.min(1,(46-midi)/10));
+  // Phases
+  let ph=0, phSub=0, phOct=0;
+  const dph=freq/sr, dphSub=freq*0.5/sr, dphOct=freq*2/sr;
+  // Filtre one-pole lowpass avec enveloppe (attaque de doigt qui se referme)
+  const baseF=freq*1.8+120;
+  let lp=0;
+  for(let i=0;i<N;i++){
+    const tSec=i/sr;
+    // léger drift de pitch à l'attaque (+8 cents -> 0 en 60ms)
+    const drift=tSec<0.06?Math.pow(2,(8*(1-tSec/0.06))/1200):1;
+    // oscillateurs
+    const saw=2*(ph-Math.floor(ph+0.5));            // saw naïve (ok en grave)
+    const sine=Math.sin(2*Math.PI*ph);
+    const sub=Math.sin(2*Math.PI*phSub);
+    const octH=Math.sin(2*Math.PI*phOct);
+    let s=saw*0.42+sine*0.62+sub*0.22+octH*0.55*loFactor;
+    ph+=dph*drift; phSub+=dphSub*drift; phOct+=dphOct*drift;
+    // filtre : cutoff descend de baseF*2.5 vers baseF en 150ms
+    const envF=tSec<0.15?(1+1.5*(1-tSec/0.15)):1;
+    const fc=Math.min(sr*0.45,baseF*envF);
+    const a=1-Math.exp(-2*Math.PI*fc/sr);
+    lp+=a*(s-lp);
+    // enveloppe AD -> sustain (le release est appliqué au gain à la lecture)
+    let env;
+    if(tSec<0.012)env=tSec/0.012;
+    else if(tSec<0.012+0.32)env=1-(1-0.55)*((tSec-0.012)/0.32);
+    else env=0.55;
+    out[i]=lp*env;
+  }
+  // normalisation douce
+  let maxAbs=0.001;
+  for(let i=0;i<N;i++){const a=Math.abs(out[i]);if(a>maxAbs)maxAbs=a;}
+  const norm=0.8/maxAbs;
+  for(let i=0;i<N;i++)out[i]*=norm;
+  const buf=ctx.createBuffer(1,N,sr);
+  buf.getChannelData(0).set(out);
+  _bassCache.set(key,buf);
+  if(_bassCache.size>28){const oldest=_bassCache.keys().next().value;_bassCache.delete(oldest);}
+  return buf;
+}
+function playBassMidi(midi,duration,startTime,vel){
+  if(!isFinite(midi)||!isFinite(duration)||duration<=0)return;
+  const ctx=getAudio();
+  const t=ctx.currentTime+Math.max(0.08,startTime);
+  const buf=_bassRender(Math.round(midi));
+  const release=0.25;
+  const playSec=Math.min(duration+release,_BASS_RENDER_SEC);
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const g=ctx.createGain();
+  const level=0.8*(vel||1);
+  g.gain.setValueAtTime(level,t);
+  g.gain.setValueAtTime(level,t+Math.max(0.01,playSec-release));
+  g.gain.linearRampToValueAtTime(0.0001,t+playSec);
+  src.connect(g);g.connect(gains.bass);
+  src.start(t);src.stop(t+playSec+0.03);
+  setTimeout(()=>{try{g.disconnect();}catch(e){}},
+    Math.max(100,(t-ctx.currentTime+playSec+0.2)*1000));
+}
+
+/* ---- PIANO : FM 2-op façon Rhodes ---- */
+/* ---- PIANO : rendu additif offline en buffer + cache (riche, Android-safe) ---- */
+const _PIANO_SEC=3.0;
+const _pianoCache=new Map();
+function _pianoRender(midi){
+  const key="p|"+midi;
+  const hit=_pianoCache.get(key);
+  if(hit){_pianoCache.delete(key);_pianoCache.set(key,hit);return hit;}
+  const ctx=getAudio();const sr=ctx.sampleRate;
+  const f=midiFreq(midi);
+  const N=Math.floor(sr*_PIANO_SEC);
+  const out=new Float32Array(N);
+  // Partiels façon piano : fondamentale + harmoniques + léger inharmonique + sous-octave (corps)
+  const partials=[
+    {m:0.5,a:0.32,d:2.9},
+    {m:1.0,a:1.00,d:2.6},
+    {m:2.0,a:0.50,d:1.8},
+    {m:3.01,a:0.28,d:1.2},
+    {m:4.02,a:0.15,d:0.8},
+    {m:5.04,a:0.08,d:0.5}
+  ];
+  for(let i=0;i<N;i++){
+    const t=i/sr;let s=0;
+    for(const p of partials)s+=p.a*Math.sin(2*Math.PI*f*p.m*t)*Math.exp(-t/p.d);
+    out[i]=s;
+  }
+  // Marteau : court bruit d'attaque
+  const hamN=Math.floor(sr*0.008);
+  for(let i=0;i<hamN;i++)out[i]+=(Math.random()*2-1)*0.22*(1-i/hamN);
+  // EQ : coupe-bas, chaleur, air
+  const hp=_biquad("highpass",60,sr,0.7);
+  const warm=_biquad("peaking",300,sr,0.9,2);
+  const air=_biquad("peaking",3000,sr,0.7,1.5);
+  for(let i=0;i<N;i++){let x=out[i];x=hp.run(x);x=warm.run(x);x=air.run(x);out[i]=x;}
+  let m=0.001;for(let i=0;i<N;i++){const a=Math.abs(out[i]);if(a>m)m=a;}
+  const norm=0.5/m;
+  const aN=Math.floor(sr*0.004);
+  for(let i=0;i<N;i++){let e=norm;if(i<aN)e*=i/aN;out[i]*=e;}
+  const buf=ctx.createBuffer(1,N,sr);buf.getChannelData(0).set(out);
+  _pianoCache.set(key,buf);
+  if(_pianoCache.size>48){const o=_pianoCache.keys().next().value;_pianoCache.delete(o);}
+  return buf;
+}
+function playPianoMidi(midi,duration,startTime,vel){
+  const ctx=getAudio();
+  const t=ctx.currentTime+Math.max(0.08,startTime);
+  const buf=_pianoRender(midi);
+  const playSec=Math.min(duration+0.5,_PIANO_SEC);
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const g=ctx.createGain();
+  const level=(vel||1)*0.5;
+  g.gain.setValueAtTime(level,t);
+  if(playSec<_PIANO_SEC-0.01){
+    g.gain.setValueAtTime(level,t+Math.max(0.02,playSec-0.12));
+    g.gain.linearRampToValueAtTime(0.0001,t+playSec);
+  }
+  src.connect(g);g.connect(gains.piano);
+  src.start(t);src.stop(t+playSec+0.05);
+  setTimeout(()=>{try{g.disconnect();}catch(e){}},
+    Math.max(80,(t-ctx.currentTime+playSec+0.3)*1000));
+}
+
+/* ---- BATTERIE : chaque hit PRÉ-RENDU en buffer (JS pur, cache par kit/type) ---- */
+const DRUM_KITS={
+  acoustic:{kick:{f1:180,f2:40,decay:.40,punch:1.0,subVol:1.3},snare:{bodyF:200,bodyVol:.40,noiseVol:.70,decay:.22,hpf:1500,bpf:2900},
+    hihat:{hpf:9000,decay:.07,vol:.45},ride:{f1:1050,decay:.55,vol:.28}},
+  rock:{kick:{f1:220,f2:50,decay:.32,punch:1.3,subVol:1.5},snare:{bodyF:230,bodyVol:.50,noiseVol:.85,decay:.18,hpf:1700,bpf:3400},
+    hihat:{hpf:9500,decay:.06,vol:.50},ride:{f1:1100,decay:.5,vol:.32}},
+  metal:{kick:{f1:260,f2:55,decay:.20,punch:1.3,subVol:1.55},snare:{bodyF:260,bodyVol:.50,noiseVol:.95,decay:.14,hpf:2000,bpf:4200},
+    hihat:{hpf:10500,decay:.05,vol:.55},ride:{f1:1180,decay:.4,vol:.38}},
+  jazz:{kick:{f1:140,f2:38,decay:.55,punch:.7,subVol:.95},snare:{bodyF:175,bodyVol:.28,noiseVol:.40,decay:.35,hpf:1100,bpf:2200},
+    hihat:{hpf:8000,decay:.10,vol:.40},ride:{f1:720,decay:1.15,vol:.22}}
+};
+const _drumCache=new Map();
+/* Filtres one-pole/deux-pole simples appliqués pendant le rendu */
+function _renderDrumBuffer(type,kitName){
+  const key=type+"|"+kitName;
+  const hit=_drumCache.get(key);
+  if(hit)return hit;
+  const ctx=getAudio();
+  const sr=ctx.sampleRate;
+  const K=DRUM_KITS[kitName]||DRUM_KITS.acoustic;
+  let N,render;
+  if(type==="kick"){
+    const k=K.kick;
+    N=Math.floor(sr*(k.decay+0.08));
+    render=out=>{
+      let ph=0,ph2=0;
+      for(let i=0;i<N;i++){
+        const tSec=i/sr;
+        const f=tSec<0.18?k.f1+(k.f2-k.f1)*(tSec/0.18):k.f2;
+        ph+=f/sr;
+        const body=Math.sin(2*Math.PI*ph)*Math.max(0,1-tSec/k.decay)*k.subVol;
+        const f2=tSec<0.06?k.f1*0.66+(k.f2*1.25-k.f1*0.66)*(tSec/0.06):k.f2*1.25;
+        ph2+=f2/sr;
+        const tri=(2/Math.PI)*Math.asin(Math.sin(2*Math.PI*ph2));
+        const punch=tri*Math.max(0,1-tSec/0.12)*0.6*k.punch;
+        out[i]=body+punch;
+      }
+    };
+  } else if(type==="snare"){
+    const s=K.snare;
+    N=Math.floor(sr*(s.decay+0.05));
+    render=out=>{
+      let ph=0,hp=0,hpPrev=0,bpLow=0,bpBand=0;
+      const aHp=Math.exp(-2*Math.PI*s.hpf/sr);
+      const fBp=2*Math.sin(Math.PI*s.bpf/sr), qBp=1/0.9;
+      for(let i=0;i<N;i++){
+        const tSec=i/sr;
+        const n=Math.random()*2-1;
+        // highpass one-pole
+        const hpOut=aHp*(hp+n-hpPrev);hp=hpOut;hpPrev=n;
+        // bandpass (state variable simplifié)
+        bpLow+=fBp*bpBand;
+        const high=hpOut-bpLow-qBp*bpBand;
+        bpBand+=fBp*high;
+        const noise=bpBand*Math.max(0,1-tSec/s.decay)*s.noiseVol;
+        ph+=s.bodyF/sr;
+        const tri=(2/Math.PI)*Math.asin(Math.sin(2*Math.PI*ph));
+        const body=tri*Math.max(0,1-tSec/0.12)*s.bodyVol;
+        out[i]=noise+body;
+      }
+    };
+  } else if(type==="hihat"){
+    const h=K.hihat;
+    N=Math.floor(sr*(h.decay+0.02));
+    render=out=>{
+      let hp=0,hpPrev=0;
+      const aHp=Math.exp(-2*Math.PI*h.hpf/sr);
+      for(let i=0;i<N;i++){
+        const tSec=i/sr;
+        const n=Math.random()*2-1;
+        const hpOut=aHp*(hp+n-hpPrev);hp=hpOut;hpPrev=n;
+        out[i]=hpOut*Math.max(0,1-tSec/h.decay)*h.vol;
+      }
+    };
+  } else if(type==="wood"){
+    N=Math.floor(sr*0.12);
+    render=out=>{
+      let ph=0,bpLow=0,bpBand=0;
+      const fBp=2*Math.sin(Math.PI*1400/sr), qBp=1/1.2;
+      for(let i=0;i<N;i++){
+        const tSec=i/sr;
+        const f=tSec<0.03?880+(760-880)*(tSec/0.03):760;
+        ph+=f/sr;
+        const tri=(2/Math.PI)*Math.asin(Math.sin(2*Math.PI*ph));
+        const ping=tri*Math.exp(-tSec/0.028)*0.5;
+        let click=0;
+        if(tSec<0.025){
+          const n=Math.random()*2-1;
+          bpLow+=fBp*bpBand;
+          const high=n-bpLow-qBp*bpBand;
+          bpBand+=fBp*high;
+          click=bpBand*Math.exp(-tSec/0.008)*0.18;
+        }
+        out[i]=ping+click;
+      }
+    };
+  } else { // ride
+    const r=K.ride;
+    const pingDecay=Math.min(r.decay*0.5,0.5);
+    N=Math.floor(sr*(pingDecay+0.05));
+    render=out=>{
+      const parts=[1,2.41,3.83];
+      for(let i=0;i<N;i++){
+        const tSec=i/sr;
+        let s=0;
+        parts.forEach((mult,pi)=>{
+          const dec=pingDecay*(1-pi*0.12);
+          s+=Math.sin(2*Math.PI*r.f1*mult*tSec)*(r.vol/(pi+1.4))*Math.exp(-3*tSec/dec);
+        });
+        out[i]=s;
+      }
+    };
+  }
+  const buf=ctx.createBuffer(1,Math.max(16,N),sr);
+  render(buf.getChannelData(0));
+  _drumCache.set(key,buf);
+  return buf;
+}
+function playDrum(type,startTime,vel,kitName){
+  const ctx=getAudio();
+  const t=ctx.currentTime+Math.max(0.08,startTime);
+  const buf=_renderDrumBuffer(type,kitName);
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const g=ctx.createGain();g.gain.value=vel;
+  src.connect(g);g.connect(gains.drums);
+  src.start(t);
+  setTimeout(()=>{try{g.disconnect();}catch(e){}},
+    Math.max(100,(t-ctx.currentTime+buf.duration+0.2)*1000));
+}
+/* Pré-chauffe : rendre tous les buffers du kit AVANT la lecture */
+function warmKit(kitName){
+  ["kick","snare","hihat","wood","ride"].forEach(t=>{try{_renderDrumBuffer(t,kitName);}catch(e){}});
+}
+
+/* ============================================================
+   4. GROOVES — patterns d'une mesure 4/4 (batterie + rôles)
+   ============================================================ */
+const GROOVES={
+  rock:{label:"Rock",kit:"rock",
+    drum:{kick:[[0,1],[2,.9]],snare:[[1,1],[3,1]],hihat:[[0,.6],[.5,.45],[1,.6],[1.5,.45],[2,.6],[2.5,.45],[3,.6],[3.5,.45]]},
+    bass:[[0,.9],[1,.4],[2,.9],[3,.4]],
+    guitar:{mode:"strum",hits:[[0,1.8],[2,1.8]]},
+    piano:{mode:"pad",hits:[[0,3.8]]}},
+  metal:{label:"Metal",kit:"metal",
+    drum:{kick:[[0,1],[.5,.85],[1.5,.85],[2,1],[2.5,.85],[3.5,.85]],snare:[[1,1],[3,1]],
+      hihat:[[0,.65],[.5,.55],[1,.65],[1.5,.55],[2,.65],[2.5,.55],[3,.65],[3.5,.55]]},
+    bass:[[0,.3],[.5,.3],[1,.3],[1.5,.3],[2,.3],[2.5,.3],[3,.3],[3.5,.3]],
+    guitar:{mode:"chug",hits:[[0,.25],[.5,.25],[1,.25],[1.5,.25],[2,.25],[2.5,.25],[3,.25],[3.5,.25]]},
+    piano:{mode:"pad",hits:[[0,3.8]]}},
+  funk:{label:"Funk 16th",kit:"acoustic",
+    drum:{kick:[[0,1],[.75,.7],[2.5,.9]],snare:[[1,1],[3,1],[3.75,.4]],
+      hihat:[[0,.55],[.25,.35],[.5,.5],[.75,.35],[1,.55],[1.25,.35],[1.5,.5],[1.75,.35],[2,.55],[2.25,.35],[2.5,.5],[2.75,.35],[3,.55],[3.25,.35],[3.5,.5],[3.75,.35]]},
+    bass:[[0,.35],[.75,.25],[1.5,.35],[2.5,.35],[3.25,.25]],
+    guitar:{mode:"comp",hits:[[.5,.25],[1.75,.3],[2.5,.25],[3.5,.3]]},
+    piano:{mode:"comp",hits:[[1,.4],[2.75,.5]]}},
+  jazz:{label:"Jazz Swing",kit:"jazz",
+    drum:{kick:[[0,.32],[2,.28]],ride:[[0,.42],[1,.24],[2,.36],[3,.24],[3.66,.28]],hihat:[[1,.48],[3,.48]]},
+    bass:[[0,.9],[1,.9],[2,.9],[3,.9]],
+    guitar:{mode:"comp",hits:[[1,.5],[2.66,.5]]},
+    piano:{mode:"comp",hits:[[.5,.4],[2.66,.6]]}},
+  ballad:{label:"Ballade",kit:"acoustic",
+    drum:{kick:[[0,.8],[2,.7]],snare:[[1,.55],[3,.55]],hihat:[[0,.4],[1,.4],[2,.4],[3,.4]]},
+    bass:[[0,1.8],[2,1.8]],
+    guitar:{mode:"arp",hits:[[0],[.5],[1],[1.5],[2],[2.5],[3],[3.5]]},
+    piano:{mode:"pad",hits:[[0,3.8]]}},
+  atmos:{label:"Atmosphérique",kit:"acoustic",
+    drum:{kick:[[0,.6]],ride:[[2,.4]]},
+    bass:[[0,3.6]],
+    guitar:{mode:"arp",hits:[[0],[1],[2],[3]]},
+    piano:{mode:"pad",hits:[[0,3.8]]}},
+  punk:{label:"Punk (d-beat)",kit:"rock",
+    drum:{kick:[[0,1],[1.5,.9],[2,1],[3.5,.9]],snare:[[1,1],[3,1]],
+      hihat:[[0,.55],[.5,.5],[1,.55],[1.5,.5],[2,.55],[2.5,.5],[3,.55],[3.5,.5]]},
+    bass:[[0,.25],[.5,.25],[1,.25],[1.5,.25],[2,.25],[2.5,.25],[3,.25],[3.5,.25]],
+    guitar:{mode:"djent",hits:[[0,1],[.5,0],[1,0],[1.5,0],[2,1],[2.5,0],[3,0],[3.5,0]]},
+    piano:{mode:"pad",hits:[]}},
+  gallop:{label:"Heavy (galop)",kit:"metal",
+    drum:{kick:[[0,1],[.75,.8],[1.75,.8],[2,1],[2.75,.8],[3.75,.8]],snare:[[1,1],[3,1]],
+      hihat:[[0,.6],[.5,.5],[1,.6],[1.5,.5],[2,.6],[2.5,.5],[3,.6],[3.5,.5]]},
+    bass:[[0,.25],[.5,.2],[.75,.2],[1,.25],[1.5,.2],[1.75,.2],[2,.25],[2.5,.2],[2.75,.2],[3,.25],[3.5,.2],[3.75,.2]],
+    guitar:{mode:"djent",hits:[[0,1],[.5,0],[.75,0],[1,1],[1.5,0],[1.75,0],[2,1],[2.5,0],[2.75,0],[3,1],[3.5,0],[3.75,0]]},
+    piano:{mode:"pad",hits:[]}},
+  doom:{label:"Doom (lourd)",kit:"metal",
+    drum:{kick:[[0,1],[2.5,.9]],snare:[[2,1]],ride:[[0,.5],[1,.4],[2,.5],[3,.4]]},
+    bass:[[0,1.8],[2.5,1.2]],
+    guitar:{mode:"djent",hits:[[0,2],[2.5,2]]},
+    piano:{mode:"pad",hits:[[0,3.8]]}},
+  blast:{label:"Black (blast)",kit:"metal",
+    drum:{kick:[[0,.9],[.5,.85],[1,.9],[1.5,.85],[2,.9],[2.5,.85],[3,.9],[3.5,.85]],
+      snare:[[.25,.8],[.75,.8],[1.25,.8],[1.75,.8],[2.25,.8],[2.75,.8],[3.25,.8],[3.75,.8]],
+      ride:[[0,.4],[1,.4],[2,.4],[3,.4]]},
+    bass:[[0,.9],[1,.9],[2,.9],[3,.9]],
+    guitar:{mode:"djent",hits:[[0,2],[1,2],[2,2],[3,2]]},
+    piano:{mode:"pad",hits:[]}},
+  djent16:{label:"Djent (syncopé)",kit:"metal",
+    drum:{kick:[[0,1],[.5,.85],[1.75,.9],[2.5,.9]],snare:[[1,1],[3,1]],
+      hihat:[[0,.55],[.75,.45],[1.5,.5],[2,.55],[2.75,.45],[3.5,.5]]},
+    bass:[[0,.25],[.5,.25],[1.75,.25],[2.5,.25],[3.25,.25]],
+    guitar:{mode:"djent",hits:[[0,1],[.5,0],[1,0],[1.5,0],[1.75,1],[2.25,0],[2.75,0],[3.25,0],[3.5,1],[3.75,0]]},
+    piano:{mode:"pad",hits:[]}},
+  breakdown:{label:"Metalcore (breakdown)",kit:"metal",
+    drum:{kick:[[0,1],[1.5,.95],[2.75,.95]],snare:[[1,1],[3,1]],
+      hihat:[[0,.5],[1,.5],[2,.5],[3,.5]]},
+    bass:[[0,.7],[1.5,.5],[2.75,.5]],
+    guitar:{mode:"djent",hits:[[0,1],[1.5,2],[2.75,1],[3.25,0]]},
+    piano:{mode:"pad",hits:[]}},
+  /* Les 4 styles de pompe du module Manouche de Guitar Modes :
+     boum/tchik = durées (fraction de temps / secondes), grace = pompe à trois */
+  pompe:{label:"Pompe trad",kit:"jazz",
+    drum:{},
+    bass:[[0,.85,0],[2,.85,1]],
+    guitar:{mode:"pompe",pompe:{boum:0.70,tchik:0.08,grace:false},hits:[[0,"boum"],[1,"tchik"],[2,"boum"],[3,"tchik"]]},
+    piano:{mode:"comp",hits:[]}},
+  pompeSeche:{label:"Pompe sèche",kit:"jazz",
+    drum:{},
+    bass:[[0,.85,0],[2,.85,1]],
+    guitar:{mode:"pompe",pompe:{boum:0.28,tchik:0.05,grace:false},hits:[[0,"boum"],[1,"tchik"],[2,"boum"],[3,"tchik"]]},
+    piano:{mode:"comp",hits:[]}},
+  pompeSwing:{label:"Pompe swing (à trois)",kit:"jazz",
+    drum:{},
+    bass:[[0,.85,0],[2,.85,1]],
+    guitar:{mode:"pompe",pompe:{boum:0.62,tchik:0.09,grace:true},hits:[[0,"boum"],[1,"tchik"],[2,"boum"],[3,"tchik"]]},
+    piano:{mode:"comp",hits:[]}},
+  pompeModerne:{label:"Pompe moderne",kit:"jazz",
+    drum:{},
+    bass:[[0,.85,0],[2,.85,1]],
+    guitar:{mode:"pompe",pompe:{boum:0.45,tchik:0.12,grace:false},hits:[[0,"boum"],[1,"tchik"],[2,"boum"],[3,"tchik"]]},
+    piano:{mode:"comp",hits:[]}},
+  pompeValse:{label:"Pompe valse (3 temps)",kit:"jazz",
+    drum:{},
+    bass:[[0,.85,0]],
+    guitar:{mode:"pompe",pompe:{boum:0.70,tchik:0.08,grace:false},hits:[[0,"boum"],[1,"tchik"],[2,"tchik"]]},
+    piano:{mode:"comp",hits:[]}},
+  /* Funk : scratche 16e avec ghost notes, le "One", disco octaves */
+  funkJB:{label:"Funk (The One)",kit:"acoustic",
+    drum:{kick:[[0,1],[1.75,.7],[2.5,.85]],snare:[[1,1],[3,1],[.75,.25],[1.75,.25],[2.25,.25],[3.75,.3]],
+      hihat:[[0,.55],[.25,.3],[.5,.45],[.75,.3],[1,.55],[1.25,.3],[1.5,.45],[1.75,.3],[2,.55],[2.25,.3],[2.5,.45],[2.75,.3],[3,.55],[3.25,.3],[3.5,.45],[3.75,.3]]},
+    bass:[[0,.5,0],[.75,.2,2],[1.5,.3,0],[2.5,.3,1],[3.25,.25,0]],
+    guitar:{mode:"scratch",hits:[[0,1],[.25,0],[.5,0],[.75,1],[1.25,0],[1.5,1],[1.75,0],[2,1],[2.5,0],[2.75,1],[3.25,0],[3.5,1],[3.75,0]]},
+    piano:{mode:"comp",hits:[[1.75,.3],[3.5,.35]]}},
+  disco:{label:"Disco (octaves)",kit:"rock",
+    drum:{kick:[[0,1],[1,1],[2,1],[3,1]],snare:[[1,.9],[3,.9]],
+      hihat:[[.5,.6],[1.5,.6],[2.5,.6],[3.5,.6],[0,.3],[1,.3],[2,.3],[3,.3]]},
+    bass:[[0,.4,0],[.5,.4,2],[1,.4,0],[1.5,.4,2],[2,.4,0],[2.5,.4,2],[3,.4,0],[3.5,.4,2]],
+    guitar:{mode:"scratch",hits:[[.5,1],[.75,0],[1.5,1],[1.75,0],[2.5,1],[2.75,0],[3.5,1],[3.75,0]]},
+    piano:{mode:"comp",hits:[[0,.4],[2,.4]]}},
+  funkrock:{label:"Funk-rock",kit:"rock",
+    drum:{kick:[[0,1],[.75,.8],[2,1],[2.75,.8]],snare:[[1,1],[3,1],[3.75,.35]],
+      hihat:[[0,.6],[.5,.45],[1,.6],[1.5,.45],[2,.6],[2.5,.45],[3,.6],[3.5,.45]]},
+    bass:[[0,.3,0],[.5,.25,0],[.75,.25,2],[2,.3,0],[2.5,.25,0],[2.75,.25,1]],
+    guitar:{mode:"scratch",hits:[[0,1],[.5,1],[.75,0],[1.5,1],[2,1],[2.5,1],[2.75,0],[3.5,1]]},
+    piano:{mode:"pad",hits:[]}},
+  /* Rockabilly : train beat brossé + walking bass "slap" */
+  rockabilly:{label:"Rockabilly (train beat)",kit:"jazz",
+    drum:{kick:[[0,.85],[2,.8]],snare:[[1,.7],[1.5,.35],[3,.7],[3.5,.35]],
+      hihat:[[0,.4],[.5,.3],[1,.4],[1.5,.3],[2,.4],[2.5,.3],[3,.4],[3.5,.3]]},
+    bass:[[0,.45,0],[1,.45,1],[2,.45,0],[3,.45,1]],
+    guitar:{mode:"boogie",hits:[[0],[.5],[1],[1.5],[2],[2.5],[3],[3.5]]},
+    piano:{mode:"comp",hits:[[1,.3],[3,.3]]}},
+  psychobilly:{label:"Psychobilly (slap furieux)",kit:"rock",
+    drum:{kick:[[0,1],[1,.8],[2,1],[3,.8]],snare:[[1,1],[3,1],[3.75,.5]],
+      hihat:[[0,.5],[.5,.4],[1,.5],[1.5,.4],[2,.5],[2.5,.4],[3,.5],[3.5,.4]]},
+    bass:[[0,.3,0],[.75,.25,1],[1.5,.3,0],[2,.3,0],[2.75,.25,1],[3.5,.3,0]],
+    guitar:{mode:"boogie",hits:[[0],[.25],[.5],[.75],[1],[1.25],[1.5],[1.75],[2],[2.25],[2.5],[2.75],[3],[3.25],[3.5],[3.75]]},
+    piano:{mode:"comp",hits:[]}},
+  /* Reggae : one drop (grosse caisse sur le 3), skank sur les contretemps */
+  reggaeOneDrop:{label:"Reggae (one drop)",kit:"acoustic",
+    drum:{kick:[[2,1]],snare:[[2,.85]],hihat:[[0,.35],[.5,.5],[1,.35],[1.5,.5],[2,.35],[2.5,.5],[3,.35],[3.5,.5]]},
+    bass:[[0,.9,0],[1.5,.5,1],[2.5,.9,0]],
+    guitar:{mode:"skank",hits:[[.5],[1.5],[2.5],[3.5]]},
+    piano:{mode:"bubble",hits:[[.5],[1.5],[2.5],[3.5]]}},
+  reggaeSteppers:{label:"Reggae (steppers)",kit:"acoustic",
+    drum:{kick:[[0,.9],[1,.9],[2,.9],[3,.9]],snare:[[2,.8]],
+      hihat:[[0,.35],[.5,.5],[1,.35],[1.5,.5],[2,.35],[2.5,.5],[3,.35],[3.5,.5]]},
+    bass:[[0,.55,0],[.75,.35,1],[2,.55,0],[2.75,.35,1]],
+    guitar:{mode:"skank",hits:[[.5],[1.5],[2.5],[3.5]]},
+    piano:{mode:"bubble",hits:[[.5],[1.5],[2.5],[3.5]]}},
+  ska:{label:"Ska (upstroke rapide)",kit:"rock",
+    drum:{kick:[[0,.8],[2,.8]],snare:[[1,.9],[3,.9]],
+      hihat:[[0,.4],[.5,.55],[1,.4],[1.5,.55],[2,.4],[2.5,.55],[3,.4],[3.5,.55]]},
+    bass:[[0,.4,0],[1,.4,1],[2,.4,0],[3,.4,1]],
+    guitar:{mode:"skank",hits:[[.5],[1],[1.5],[2],[2.5],[3],[3.5]]},
+    piano:{mode:"bubble",hits:[[.5],[1.5],[2.5],[3.5]]}},
+  dub:{label:"Dub (spacieux)",kit:"acoustic",
+    drum:{kick:[[2,1]],snare:[[2,.7]],hihat:[[.5,.4],[2.5,.4]]},
+    bass:[[0,1.4,0],[2.5,1.2,0]],
+    guitar:{mode:"skank",hits:[[2.5]]},
+    piano:{mode:"bubble",hits:[[.5],[3.5]]}},
+  impair7:{label:"7/8 (3+2+2)",kit:"rock",
+    drum:{kick:[[0,1],[1.5,.85],[2.5,.85]],snare:[[1.5,.6],[2.5,.9]],
+      hihat:[[0,.6],[.5,.4],[1,.5],[1.5,.6],[2,.4],[2.5,.6],[3,.4]]},
+    bass:[[0,1.3],[1.5,.8],[2.5,.8]],
+    guitar:{mode:"strum",hits:[[0,1.4],[1.5,.9],[2.5,.9]]},
+    piano:{mode:"pad",hits:[[0,3.3]]}}
+};
+/* Groove suggéré selon le style de la progression */
+const STYLE_TO_GROOVE={fusion:"funk",funk:"funk",jazz:"jazz",beatles:"rock",lydien:"atmos",live:"ballad",blues:"rock",pop:"rock",morpher:"ballad",starter:"rock",manouche:"pompe",metal:"metal",punk:"punk",billy:"rockabilly",reggae:"reggaeOneDrop"};
+const STARTER_GROOVE={ "starter-blues-a":"rock","starter-ballade-g":"ballad","starter-folk-em":"ballad",
+  "starter-andalouse":"ballad","starter-rock-e":"rock","starter-vamp-am":"funk",
+  "master-septhuit":"impair7","master-polytonal":"atmos","master-drop2":"jazz",
+  "master-constant-lydien":"atmos","master-constant-varie":"atmos","adv-quartal-dorien":"atmos","man-valse":"pompeValse" };
+
+/* ============================================================
+   5. ÉTAT + SCHEDULER (accords à durées variables, en beats)
+   ============================================================ */
+const appState={
+  progIdx:0, styleFilter:"all", groove:"rock", bpm:96,
+  rootPc:0, familyKey:"major", modeIdx:0, morpherRoot:0, chugTone:"classic", transpose:0, targetKey:null
+};
+let playing=false, schedulerTimer=null, nextChordTime=0, chordCursor=0;
+const SCHEDULE_AHEAD=0.60, LOOKAHEAD_MS=40;
+
+function currentProg(){return PROGRESSIONS[appState.progIdx];}
+
+function scheduleChord(chordIdx,startTime){
+  const prog=currentProg();
+  const chords=progChords(prog);
+  const chord=chords[chordIdx % chords.length];
+  const G=GROOVES[appState.groove];
+  const beatDur=60/appState.bpm;
+  const chordBeats=chord.beats||4;
+  const chordDur=chordBeats*beatDur;
+  const voicingMidi=parseVoicing(chord.voicing).map(m=>m+appState.transpose); // ascendant + transpo globale
+  if(voicingMidi.length===0) return chordDur;
+  const bassMidi=Math.max(28,voicingMidi[0]-12);
+  const upperMidi=voicingMidi.length>2?voicingMidi.slice(1):voicingMidi;
+
+  const nBars=Math.max(1,Math.ceil(chordBeats/4));
+  for(let bar=0;bar<nBars;bar++){
+    const barStart=startTime+bar*4*beatDur;
+    const barBeats=Math.min(4,chordBeats-bar*4);
+    const inBar=b=>b<barBeats-0.01;
+
+    if(document.getElementById("onDrums").checked){
+      ["kick","snare","hihat","ride","wood"].forEach(dt=>{
+        (G.drum[dt]||[]).forEach(([b,v])=>{if(inBar(b))playDrum(dt,barStart+b*beatDur-getAudio().currentTime,v,G.kit);});
+      });
+    }
+    if(document.getElementById("onBass").checked){
+      G.bass.forEach(h=>{
+        const [b,dur]=h; const noteIdx=h[2]||0;
+        if(!inBar(b))return;
+        // idx 1 = note alternée : la QUINTE de l'accord (b5 pour un dim),
+        // comme le boum-boum du module Pompe — pas la 2e note du voicing
+        // qui est souvent la 6te dans les formes Django.
+        // idx: 0 fondamentale, 1 quinte (b5 sur dim), 2 octave (disco/funk)
+        const fifthUp=/dim/i.test(chord.name)?6:7;
+        const bm=noteIdx===2?bassMidi+12:(noteIdx===1?bassMidi+fifthUp:bassMidi);
+        playBassMidi(bm,dur*beatDur,barStart+b*beatDur-getAudio().currentTime,0.9);
+      });
+    }
+    if(document.getElementById("onGuitar").checked){
+      const g=G.guitar;
+      if(g.mode==="djent"){
+        // Son chug metal (module Djent de Guitar Modes) : la note grave du
+        // voicing suffit, la quinte est DANS le son. hit[1] = variant (0/1/2)
+        g.hits.forEach(([b,variant],hi)=>{
+          if(!inBar(b))return;
+          const nextB=hi+1<g.hits.length?g.hits[hi+1][0]:4; // fin de mesure sinon
+          const gapSec=Math.max(0.08,nextB-b)*beatDur;
+          playChug(Math.max(28,voicingMidi[0]-12),barStart+b*beatDur-getAudio().currentTime,variant||0,0.9,gapSec);
+        });
+      } else if(g.mode==="pompe"){
+        // La pompe (module Manouche de Guitar Modes) : boum qui sonne sur
+        // 1 et 3, tchik sec sur 2 et 4. Paramètres du style de pompe :
+        // durées boum/tchik + coup de grâce avant le boum (pompe à trois).
+        const ps=g.pompe||{boum:0.70,tchik:0.08,grace:false};
+        g.hits.forEach(([b,kind])=>{
+          if(!inBar(b))return;
+          const t0=barStart+b*beatDur-getAudio().currentTime;
+          if(kind==="boum"){
+            // Pompe à trois (swing) : petit coup léger juste avant le boum,
+            // sur les notes aiguës seulement
+            if(ps.grace&&(bar>0||b>0)){
+              voicingMidi.slice(2).forEach((m,i)=>playGuitarMidi(m,0.05,t0-0.065+0.004*i,0.4));
+            }
+            voicingMidi.forEach((m,i)=>playGuitarMidi(m,ps.boum*beatDur,t0+0.012*i,0.7));
+          } else {
+            voicingMidi.forEach((m,i)=>playGuitarMidi(m,ps.tchik,t0+0.003*i,0.62));
+          }
+        });
+      } else if(g.mode==="scratch"){
+        // La scratche funk : stabs d'accord courts (accents) et ghost notes
+        // étouffées entre les deux — la main droite ne s'arrête jamais.
+        g.hits.forEach(([b,acc])=>{
+          if(!inBar(b))return;
+          const t0=barStart+b*beatDur-getAudio().currentTime;
+          const hi=voicingMidi.slice(Math.max(0,voicingMidi.length-4));
+          if(acc){
+            hi.forEach((m,i)=>playGuitarMidi(m,0.12,t0+0.003*i,0.66));
+          } else {
+            // ghost : ultra court, étouffé, presque que du clic
+            hi.slice(-2).forEach((m,i)=>playGuitarMidi(m,0.025,t0+0.002*i,0.28));
+          }
+        });
+      } else if(g.mode==="boogie"){
+        // Rockabilly : boogie shuffle sur les 2 cordes graves, alternance
+        // fondamentale-quinte / fondamentale-sixte, très court et claquant
+        g.hits.forEach(([b],hi)=>{
+          if(!inBar(b))return;
+          const root=voicingMidi[0];
+          const step=[0,7,9,7][hi%4]; // R - 5 - 6 - 5 : le boogie classique
+          const t0=barStart+b*beatDur-getAudio().currentTime;
+          playGuitarMidi(root,0.16,t0,0.68);
+          playGuitarMidi(root+step,0.16,t0+0.004,0.62);
+        });
+      } else if(g.mode==="skank"){
+        // Reggae : skank sur le contretemps, notes AIGUËS seulement,
+        // très court et étouffé — la basse tient tout le grave
+        g.hits.forEach(([b])=>{
+          if(!inBar(b))return;
+          const t0=barStart+b*beatDur-getAudio().currentTime;
+          const hi=voicingMidi.slice(Math.max(0,voicingMidi.length-3));
+          hi.forEach((m,i)=>playGuitarMidi(m+12,0.09,t0+0.004*i,0.6));
+        });
+      } else if(g.mode==="chug"){
+        g.hits.forEach(([b,dur])=>{
+          if(!inBar(b))return;
+          voicingMidi.slice(0,2).forEach((m,i)=>playGuitarMidi(m,dur*beatDur,barStart+b*beatDur-getAudio().currentTime+i*0.005,0.85));
+        });
+      } else if(g.mode==="comp"){
+        g.hits.forEach(([b,dur])=>{
+          if(!inBar(b))return;
+          upperMidi.forEach((m,i)=>playGuitarMidi(m,Math.max(.35,dur*beatDur),barStart+b*beatDur-getAudio().currentTime+i*0.014,0.65));
+        });
+      } else if(g.mode==="arp"){
+        g.hits.forEach(([b],hi)=>{
+          if(!inBar(b))return;
+          const m=voicingMidi[hi % voicingMidi.length];
+          playGuitarMidi(m,beatDur*1.3,barStart+b*beatDur-getAudio().currentTime,0.7);
+        });
+      } else { // strum
+        g.hits.forEach(([b,dur])=>{
+          if(!inBar(b))return;
+          voicingMidi.forEach((m,i)=>playGuitarMidi(m,dur*beatDur,barStart+b*beatDur-getAudio().currentTime+i*0.022,0.7));
+        });
+      }
+    }
+    if(document.getElementById("onPiano").checked){
+      const p=G.piano;
+      if(p.mode==="pad"){
+        p.hits.forEach(([b,dur])=>{
+          if(!inBar(b))return;
+          upperMidi.forEach((m,i)=>playPianoMidi(m+12,Math.min(dur,barBeats-b)*beatDur,barStart+b*beatDur-getAudio().currentTime+i*0.008,0.4));
+        });
+      } else if(p.mode==="bubble"){
+        // Le "bubble" de l'orgue reggae : staccato sur les contretemps
+        p.hits.forEach(([b])=>{
+          if(!inBar(b))return;
+          upperMidi.forEach((m,i)=>playPianoMidi(m+12,0.11,barStart+b*beatDur-getAudio().currentTime+i*0.006,0.34));
+        });
+      } else { // comp
+        p.hits.forEach(([b,dur])=>{
+          if(!inBar(b))return;
+          upperMidi.forEach((m,i)=>playPianoMidi(m+12,dur*beatDur,barStart+b*beatDur-getAudio().currentTime+i*0.010,0.45));
+        });
+      }
+    }
+  }
+
+  // Highlight visuel
+  const delayMs=Math.max(0,(startTime-getAudio().currentTime)*1000);
+  setTimeout(()=>{if(playing)highlightChord(chordIdx % chords.length,chord);},delayMs);
+  return chordDur;
+}
+
+function highlightChord(idx,chord){
+  document.querySelectorAll(".pchord").forEach(el=>el.classList.remove("now"));
+  const card=document.querySelector('.pchord[data-idx="'+idx+'"]');
+  if(card)card.classList.add("now"); // pas de scrollIntoView : la page ne doit pas bouger pendant la lecture
+  document.getElementById("nowPlaying").textContent="▶ "+transposeChordName(chord.name,appState.transpose)+(chord.bassGuide?"  —  "+chord.bassGuide:"");
+}
+
+function scheduler(){
+  const ctx=getAudio();
+  while(nextChordTime<ctx.currentTime+SCHEDULE_AHEAD){
+    const dur=scheduleChord(chordCursor,nextChordTime);
+    nextChordTime+=dur;
+    chordCursor++;
+  }
+}
+function warmProgression(){
+  // Rendre tous les buffers nécessaires AVANT la lecture :
+  // aucun calcul de rendu ne doit tomber pendant que l'audio tourne.
+  warmKit(GROOVES[appState.groove].kit);
+  const chords=progChords(currentProg());
+  const isDjent=GROOVES[appState.groove].guitar.mode==="djent";
+  chords.forEach(chord=>{
+    const v=parseVoicing(chord.voicing).map(m=>m+appState.transpose);
+    if(!v.length)return;
+    if(isDjent){
+      const low=Math.round(Math.max(28,v[0]-12));
+      [0,1,2].forEach(variant=>{try{_chugRender(low,variant,appState.chugTone);}catch(e){}});
+    } else {
+      v.forEach(m=>{try{_ksRender(m);}catch(e){}});
+    }
+    const gp=GROOVES[appState.groove].piano;
+    if(gp&&gp.hits&&gp.hits.length){v.forEach(m=>{try{_pianoRender(m);}catch(e){}});}
+    try{_bassRender(Math.round(Math.max(28,v[0]-12)));}catch(e){}
+  });
+}
+function startPlayback(){
+  const ctx=getAudio();
+  const go=()=>{
+    warmProgression();
+    playing=true;chordCursor=0;nextChordTime=ctx.currentTime+0.15;
+    schedulerTimer=setInterval(scheduler,LOOKAHEAD_MS);
+    scheduler(); // premier passage immédiat
+    const tb=document.getElementById("toggleBtn");
+    tb.textContent="■ Stop";tb.classList.add("playing");
+    document.querySelector(".player-sticky").classList.add("playing");
+  };
+  // resume DANS le geste utilisateur, on attend qu'il aboutisse
+  if(ctx.state!=="running"){
+    ctx.resume().then(go).catch(go);
+  } else go();
+}
+function stopPlayback(){
+  playing=false;clearInterval(schedulerTimer);
+  const tb=document.getElementById("toggleBtn");
+  tb.textContent="▶ Lecture";tb.classList.remove("playing");
+  document.querySelector(".player-sticky").classList.remove("playing");
+  document.getElementById("nowPlaying").textContent="";
+  document.querySelectorAll(".pchord").forEach(el=>el.classList.remove("now"));
+}
+
+/* ============================================================
+   6. AFFICHAGE BIBLIOTHÈQUE + DIAGRAMMES D'ACCORDS
+   ============================================================ */
+function renderChordDiagramFromVoicing(voicing,light,shift){
+  if(!voicing)return "";
+  shift=shift||0;
+  const parts=String(voicing).toLowerCase().split("-").slice(0,6);
+  let frets=parts.map(p=>p==="x"?null:parseInt(p,10));
+  // Transposition réelle du diagramme selon la tonalité choisie.
+  // Une corde à vide (0) transposée devient une note frettée (0+shift).
+  if(shift){
+    frets=frets.map(f=>f===null?null:f+shift);
+    // Si la transposition fait descendre une note sous la case 0,
+    // on la remonte d'une octave pour rester jouable sur le manche.
+    frets=frets.map(f=>f===null?null:(f<0?f+12:f));
+  }
+  const fretted=frets.filter(f=>f!==null&&f>0);
+  const minFret=fretted.length?Math.min(...fretted):1;
+  const maxFret=fretted.length?Math.max(...fretted):1;
+  const span=5;
+  // base = 1 tant que tout tient dans les 5 premières cases (position ouverte).
+  // Sinon le diagramme démarre à la case la plus basse réellement jouée.
+  const base=(maxFret<=span)?1:minFret;
+  const rootIdx=frets.findIndex(f=>f!==null);
+  // Palette
+  const C=light?{line:"#999",fret:"#bbb",nut:"#333",dot:"#4a7ab5",root:"#c99a20",txt:"#888",pos:"#222"}
+               :{line:"rgba(255,255,255,.30)",fret:"rgba(255,255,255,.16)",nut:"#9089a8",dot:"#4fc3f7",root:"#f0c040",txt:"#9089a8",pos:"#ffffff"};
+  // Géométrie exacte : 6 cordes, 5 cases
+  const L=8, cw=12, rh=12, top=12;
+  const W=L+cw*5+8, H=top+rh*span+4;
+  const sx=i=>L+i*cw;            // x de la corde i (0=grave à gauche)
+  const fy=r=>top+r*rh;          // y de la barrette r
+  let svg='<svg class="cd-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  // Cordes (verticales) — les points seront posés SUR ces x
+  for(let i=0;i<6;i++)
+    svg+='<line x1="'+sx(i)+'" y1="'+top+'" x2="'+sx(i)+'" y2="'+fy(span)+'" stroke="'+C.line+'" stroke-width="1"/>';
+  // Barrettes (horizontales)
+  for(let r=0;r<=span;r++)
+    svg+='<line x1="'+sx(0)+'" y1="'+fy(r)+'" x2="'+sx(5)+'" y2="'+fy(r)+'" stroke="'+(r===0&&base===1?C.nut:C.fret)+'" stroke-width="'+(r===0&&base===1?2.5:1)+'"/>';
+  // × / o au-dessus de chaque corde
+  frets.forEach((f,i)=>{
+    const sym=f===null?"×":(f===0?"o":"");
+    if(sym)svg+='<text x="'+sx(i)+'" y="'+(top-4)+'" text-anchor="middle" font-size="7.5" fill="'+C.txt+'" font-family="monospace">'+sym+'</text>';
+  });
+  // Points : centre de la case, exactement sur la corde
+  frets.forEach((f,i)=>{
+    if(f===null||f===0)return;
+    const r=f-base;
+    if(r<0||r>=span)return;
+    svg+='<circle cx="'+sx(i)+'" cy="'+(fy(r)+rh/2)+'" r="4" fill="'+(i===rootIdx?C.root:C.dot)+'"/>';
+  });
+  svg+='</svg>';
+  // Le numéro de frette est du TEXTE HTML (pas du SVG) : toujours lisible,
+  // stylable en CSS, aucun risque de clipping ou de rendu exotique.
+  const label=base>1?'<div class="cd-fret"'+(light?' style="color:#222"':'')+'>'+base+'ᵉ case</div>':'';
+  return '<div class="chord-diagram">'+label+svg+'</div>';
+}
+const _TSHARP=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const _TFLAT=["C","D♭","D","E♭","E","F","G♭","G","A♭","A","B♭","B"];
+const _TPC={"C":0,"C#":1,"DB":1,"D":2,"D#":3,"EB":3,"E":4,"F":5,"F#":6,"GB":6,"G":7,"G#":8,"AB":8,"A":9,"A#":10,"BB":10,"B":11};
+function transposeChordName(name,n){
+  if(!n)return name;
+  const useFlat=/[b♭]/.test(name)&&!/[#♯]/.test(name);
+  const conv=(tok)=>{
+    const m=tok.match(/^([A-G])([#b♯♭]?)/);if(!m)return null;
+    const k=(m[1]+(m[2]||"")).replace("♯","#").replace("♭","b").toUpperCase();
+    if(!(k in _TPC))return null;
+    const pc=(_TPC[k]+n+120)%12;
+    return (useFlat?_TFLAT:_TSHARP)[pc]+tok.slice(m[0].length);
+  };
+  const q=name.match(/^(Quartale )(.+)$/); // cas "Quartale D"
+  if(q){const r=conv(q[2]);return q[1]+(r||q[2]);}
+  const parts=name.split("/");
+  const head=conv(parts[0]);
+  if(head===null)return name; // tête non-note : laissé tel quel
+  let out=head;
+  if(parts[1]!==undefined){const b=conv(parts[1]);out+="/"+(b!==null?b:parts[1]);}
+  return out;
+}
+function _rootPc(name){
+  const m=String(name).replace(/^Quartale\s+/,"").match(/^([A-G])([#b♯♭]?)/);
+  if(!m)return null;
+  const k=(m[1]+(m[2]||"")).replace("♯","#").replace("♭","b").toUpperCase();
+  return (k in _TPC)?_TPC[k]:null;
+}
+const _ROMAN=["I","♭II","II","♭III","III","IV","♭V","V","♭VI","VI","♭VII","VII"];
+function romanDegree(name,tonicPc){
+  const r=_rootPc(name);if(r===null||tonicPc===null)return "";
+  let rom=_ROMAN[((r-tonicPc)%12+12)%12];
+  const q=String(name).replace(/^([A-G][#b♯♭]?)/,"");
+  if(/ø|dim|°|m7b5|m7♭5/.test(q))rom=rom.toLowerCase()+"°";
+  else if(/^(-|m(?!aj))/.test(q))rom=rom.toLowerCase();
+  return rom;
+}
+function _currentTonicPc(){const c=progChords(currentProg());return c&&c.length?_rootPc(c[0].name):null;}
+function _normOffset(o){o=((o%12)+12)%12;return o>6?o-12:o;}
+function applyTonalite(restart){
+  const tonic=_currentTonicPc();
+  appState.transpose=(appState.targetKey===null||tonic===null)?0:_normOffset(appState.targetKey-tonic);
+  const sel=document.getElementById("tonaliteSel");
+  if(sel)sel.value=appState.targetKey===null?"":String(appState.targetKey);
+  renderProgChords();
+  if(restart&&playing){stopPlayback();startPlayback();}
+}
+function renderProgChords(){
+  const prog=currentProg();
+  const chords=progChords(prog);
+  document.getElementById("morpherRootWrap").style.display=prog.morpher?"flex":"none";
+  const wrap=document.getElementById("progChords");
+  const tonicPc=chords&&chords.length?_rootPc(chords[0].name):null;
+  wrap.innerHTML=chords.map((c,i)=>
+    '<div class="pchord" data-idx="'+i+'">'+
+      '<div class="deg">'+romanDegree(c.name,tonicPc)+'</div>'+
+      '<div class="sym">'+transposeChordName(c.name,appState.transpose)+'</div>'+
+      '<div class="beats">'+c.beats+' temps</div>'+
+      renderChordDiagramFromVoicing(c.voicing,false,appState.transpose)+
+      (c.bassGuide?'<div class="guide">'+c.bassGuide+'</div>':'')+
+    '</div>').join("");
+  document.getElementById("progDesc").innerHTML=
+    (appState.targetKey!==null?'<b style="color:var(--teal)">🎯 Tonalité '+NOTES[appState.targetKey]+'</b> — accords, diagrammes et cases transposés dans la tonalité choisie.<br>':'')+
+    '<b>'+(STYLE_LABELS[prog.style]||prog.style)+'</b> · '+(prog.feel||'')+' · tempo conseillé '+prog.tempo+' bpm<br>'+prog.description;
+}
+
+function populateLibrary(){
+  const styles=["all",...new Set(PROGRESSIONS.map(p=>p.style))];
+  const sf=document.getElementById("styleFilter");
+  sf.innerHTML=styles.map(s=>'<option value="'+s+'">'+(s==="all"?"Tous":(STYLE_LABELS[s]||s))+'</option>').join("");
+  sf.value=appState.styleFilter;
+  populateProgSelect();
+}
+function populateProgSelect(){
+  const ps=document.getElementById("progSelect");
+  const list=PROGRESSIONS.map((p,i)=>({p,i})).filter(x=>appState.styleFilter==="all"||x.p.style===appState.styleFilter);
+  ps.innerHTML=list.map(x=>'<option value="'+x.i+'">'+x.p.name+'</option>').join("");
+  if(!list.some(x=>x.i===appState.progIdx))appState.progIdx=list[0].i;
+  ps.value=appState.progIdx;
+}
+const GROOVE_CHUG={metal:"classic",gallop:"classic",punk:"punk",doom:"doom",blast:"thrash",djent16:"djent",breakdown:"djent"};
+function refreshChugVisibility(){
+  const g=GROOVES[appState.groove];
+  const usesChug=!!(g&&(g.guitar.mode==="djent"||g.guitar.mode==="chug"));
+  document.getElementById("chugWrap").style.display=usesChug?"flex":"none";
+  if(usesChug){
+    const def=GROOVE_CHUG[appState.groove]; // défaut selon le style, override manuel possible ensuite
+    if(def){
+      appState.chugTone=def;
+      const sel=document.getElementById("chugSelect");
+      if(sel)sel.value=def;
+    }
+  }
+}
+function onProgChange(){
+  const prog=currentProg();
+  // Tempo + groove suggérés
+  appState.bpm=prog.tempo||96;
+  document.getElementById("bpmRange").value=appState.bpm;
+  document.getElementById("bpmVal").textContent=appState.bpm;
+  const g=prog.groove||STARTER_GROOVE[prog.id]||STYLE_TO_GROOVE[prog.style]||"rock";
+  appState.groove=g;
+  document.getElementById("grooveSelect").value=g;
+  refreshChugVisibility();
+  applyTonalite(false);
+  if(playing){stopPlayback();startPlayback();}
+}
+
+/* ============================================================
+   6b. MODALE STARTER — charger & jouer par niveau
+   ============================================================ */
+let starterLevel=1;
+const LEVEL_LABELS={1:"🌱 Débutant",2:"🌿 Intermédiaire",3:"🌳 Confirmé",4:"🔥 Avancé",5:"👑 Maître"};
+function renderStarterList(){
+  const list=PROGRESSIONS.map((p,i)=>({p,i}))
+    .filter(x=>(x.p.difficulty||2)===starterLevel)
+    .sort((a,b)=>(a.p.style==="starter"?0:1)-(b.p.style==="starter"?0:1)); // starters maison en premier
+  document.getElementById("starterList").innerHTML=list.map(x=>
+    '<div class="sm-card" data-i="'+x.i+'">'+
+      '<div class="n">'+x.p.name+'</div>'+
+      '<div class="meta">'+(STYLE_LABELS[x.p.style]||x.p.style)+' · '+x.p.tempo+' bpm · '+(x.p.feel||'')+'</div>'+
+      '<div class="d">'+(x.p.description||'')+'</div>'+
+      '<div class="go">▶ Charger et jouer</div>'+
+    '</div>').join("")||'<div style="color:var(--dim);font-size:.75rem">Rien à ce niveau.</div>';
+}
+function openStarter(){document.getElementById("starterModal").classList.add("open");renderStarterList();}
+function closeStarter(){document.getElementById("starterModal").classList.remove("open");}
+function wireStarter(){
+  document.getElementById("starterOpen").addEventListener("click",openStarter);
+  document.getElementById("starterClose").addEventListener("click",closeStarter);
+  document.getElementById("starterModal").addEventListener("click",e=>{
+    if(e.target.id==="starterModal")closeStarter();
+  });
+  document.querySelectorAll(".sm-tab").forEach(tab=>{
+    tab.addEventListener("click",()=>{
+      starterLevel=parseInt(tab.dataset.level,10);
+      document.querySelectorAll(".sm-tab").forEach(t=>t.classList.toggle("active",t===tab));
+      renderStarterList();
+    });
+  });
+  document.getElementById("starterList").addEventListener("click",e=>{
+    const card=e.target.closest(".sm-card");
+    if(!card)return;
+    closeStarter();
+    loadAndPlay(parseInt(card.dataset.i,10)); // clic = geste utilisateur : resume audio légitime
+  });
+}
+
+/* ============================================================
+   6b-bis. MODALE METAL & PUNK — par sous-genre
+   ============================================================ */
+/* Modale générique à sous-genres (metal, billy, reggae) */
+function makeSubModal(prefix,subs,firstSub,matchFn){
+  const st={sub:firstSub};
+  const match=matchFn||((p,sub)=>p.sub===sub);
+  function renderTabs(){
+    document.getElementById(prefix+"Tabs").innerHTML=Object.keys(subs).map(k=>
+      '<button class="sm-tab'+(k===st.sub?' active':'')+'" data-sub="'+k+'">'+subs[k]+'</button>').join("");
+  }
+  function renderList(){
+    const list=PROGRESSIONS.map((p,i)=>({p,i})).filter(x=>match(x.p,st.sub));
+    document.getElementById(prefix+"List").innerHTML=list.map(x=>
+      '<div class="sm-card" data-i="'+x.i+'">'+
+        '<div class="n">'+x.p.name+'</div>'+
+        '<div class="meta">'+x.p.tempo+' bpm · '+(LEVEL_LABELS[x.p.difficulty||2]||'')+'</div>'+
+        '<div class="d">'+(x.p.description||'')+'</div>'+
+        '<div class="go">▶ Charger et jouer</div>'+
+      '</div>').join("")||'<div style="color:var(--dim);font-size:.75rem">Rien ici.</div>';
+  }
+  const modal=()=>document.getElementById(prefix+"Modal");
+  function open(){modal().style.display="flex";renderTabs();renderList();}
+  function close(){modal().style.display="none";}
+  document.getElementById(prefix+"Open").addEventListener("click",open);
+  document.getElementById(prefix+"Close").addEventListener("click",close);
+  modal().addEventListener("click",e=>{if(e.target===modal())close();});
+  document.getElementById(prefix+"Tabs").addEventListener("click",e=>{
+    const b=e.target.closest(".sm-tab");if(!b)return;
+    st.sub=b.dataset.sub;renderTabs();renderList();
+  });
+  document.getElementById(prefix+"List").addEventListener("click",e=>{
+    const card=e.target.closest(".sm-card");if(!card)return;
+    close();loadAndPlay(parseInt(card.dataset.i,10));
+  });
+}
+function loadAndPlay(i){
+  if(playing)stopPlayback();
+  appState.progIdx=i;
+  appState.styleFilter="all";
+  document.getElementById("styleFilter").value="all";
+  populateProgSelect();
+  document.getElementById("progSelect").value=i;
+  onProgChange();
+  startPlayback();
+}
+const JAZZ_SUBS={standards:"🎼 Standards",modal:"🌀 Modal",bossa:"🌴 Bossa / Latin",fusion:"⚡ Fusion"};
+function wireMetal(){
+  makeSubModal("metal",METAL_SUBS,"heavy");
+  makeSubModal("funk",FUNK_SUBS,"classique",(p,sub)=>
+    sub==="biblio" ? (p.style==="funk"&&!p.sub) : p.sub===sub);
+  makeSubModal("jazz",JAZZ_SUBS,"standards",(p,sub)=>p.jazzSub===sub);
+  makeSubModal("billy",BILLY_SUBS,"rockabilly");
+  makeSubModal("reggae",REGGAE_SUBS,"roots");
+}
+
+/* ============================================================
+   6c. EXPORT — progression courante en texte ou diagrammes
+   ============================================================ */
+function _download(filename,content,mime){
+  const blob=new Blob([content],{type:mime});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function _safeName(s){return s.replace(/[^a-z0-9àâéèêëîïôùûüç \-]/gi,"").trim().replace(/\s+/g,"-").toLowerCase();}
+function exportText(){
+  const prog=currentProg();
+  const chords=progChords(prog);
+  const lines=[];
+  lines.push(prog.name);
+  lines.push("=".repeat(prog.name.length));
+  lines.push((STYLE_LABELS[prog.style]||prog.style)+" · "+(prog.feel||"")+" · "+prog.tempo+" bpm · niveau "+(LEVEL_LABELS[prog.difficulty||2]||""));
+  if(prog.morpher)lines.push("Tonique : "+NOTES[appState.morpherRoot]);
+  lines.push("");
+  if(prog.description)lines.push(prog.description),lines.push("");
+  lines.push("Grille :");
+  chords.forEach(c=>{
+    lines.push("  "+c.name.padEnd(10)+" | "+String(c.beats).padStart(2)+" temps | "+String(c.voicing).padEnd(14)+(c.bassGuide?" | "+c.bassGuide:""));
+  });
+  lines.push("");
+  lines.push("Voicings notés corde grave -> aiguë (accordage standard EADGBe), x = étouffée, 0 = à vide.");
+  lines.push("Exporté depuis Accompagnement Modal.");
+  _download(_safeName(prog.name)+".txt",lines.join("\n"),"text/plain;charset=utf-8");
+}
+function exportDiagrams(){
+  const prog=currentProg();
+  const chords=progChords(prog);
+  const cards=chords.map(c=>
+    '<div class="card"><div class="sym">'+c.name+'</div><div class="beats">'+c.beats+' temps</div>'+
+    renderChordDiagramFromVoicing(c.voicing,true)+
+    (c.bassGuide?'<div class="guide">'+c.bassGuide+'</div>':'')+'</div>').join("");
+  const html='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>'+prog.name+'</title><style>'+
+    'body{font-family:Georgia,serif;background:#fff;color:#1a1626;padding:24px;max-width:800px;margin:0 auto}'+
+    'h1{font-size:1.3rem;margin:0 0 4px}'+
+    '.meta{color:#666;font-size:.8rem;margin-bottom:6px}'+
+    '.desc{font-size:.85rem;line-height:1.5;margin-bottom:16px}'+
+    '.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}'+
+    '.card{border:1px solid #ccc;border-radius:8px;padding:8px;text-align:center;page-break-inside:avoid}'+
+    '.sym{font-weight:700;font-size:1rem}'+
+    '.beats{color:#888;font-size:.65rem}'+
+    '.guide{color:#3a7a6a;font-size:.62rem;font-style:italic;margin-top:4px;line-height:1.3}'+
+    '.chord-diagram{margin:6px auto 2px;display:flex;flex-direction:column;align-items:center}'+
+    '.cd-fret{font-size:.62rem;font-weight:700;margin-bottom:2px}'+
+    '@media print{body{padding:8px}}'+
+    '</style></head><body>'+
+    '<h1>'+prog.name+'</h1>'+
+    '<div class="meta">'+(STYLE_LABELS[prog.style]||prog.style)+' · '+(prog.feel||'')+' · '+prog.tempo+' bpm'+
+    (prog.morpher?' · tonique '+NOTES[appState.morpherRoot]:'')+'</div>'+
+    (prog.description?'<div class="desc">'+prog.description+'</div>':'')+
+    '<div class="cards">'+cards+'</div>'+
+    '<p style="color:#999;font-size:.65rem;margin-top:18px">● doré = fondamentale · × = corde étouffée · o = corde à vide · numéro à gauche = frette de départ. Exporté depuis Accompagnement Modal.</p>'+
+    '</body></html>';
+  _download(_safeName(prog.name)+"-diagrammes.html",html,"text/html;charset=utf-8");
+}
+
+/* ============================================================
+   7. MANCHE + CLAVIER (optionnels)
+   ============================================================ */
+const TUNING_DISPLAY=[{name:"E",pc:4},{name:"A",pc:9},{name:"D",pc:2},{name:"G",pc:7},{name:"B",pc:11},{name:"E",pc:4}];
+const FRETS=13, FRET_MARKERS=[3,5,7,9,12];
+function currentMode(){return SCALES[appState.familyKey].modes[appState.modeIdx];}
+function scalePitchClasses(){return new Set(currentMode().formula.map(s=>(appState.rootPc+s)%12));}
+function labelForPc(pc){
+  const mode=currentMode();
+  const rel=((pc-appState.rootPc)+1200)%12;
+  const idx=mode.formula.indexOf(rel);
+  return idx>=0?mode.intervals[idx]:null;
+}
+function renderFretboard(){
+  const wrap=document.getElementById("fretboard");
+  const pcs=scalePitchClasses();
+  const stringsHighToLow=[...TUNING_DISPLAY].reverse();
+  let html='<div class="fb-grid"><div class="fb-cell fb-fret-head"></div>';
+  for(let f=0;f<FRETS;f++)html+='<div class="fb-cell fb-fret-head'+(f===0?' fb-open-sep':'')+'">'+f+'</div>';
+  stringsHighToLow.forEach(str=>{
+    html+='<div class="fb-cell fb-str-label">'+str.name+'</div>';
+    for(let f=0;f<FRETS;f++){
+      const pc=(str.pc+f)%12;
+      const inScale=pcs.has(pc);
+      const lbl=inScale?labelForPc(pc):null;
+      html+='<div class="fb-cell fb-slot'+(f===0?' fb-open-sep':'')+'">';
+      if(f>0&&FRET_MARKERS.includes(f)&&str===stringsHighToLow[2])html+='<span class="fb-marker"></span>';
+      if(inScale)html+='<div class="fb-note" data-pc="'+pc+'" style="background:'+intervalColor(lbl)+';color:#0a0810">'+lbl+'</div>';
+      html+='</div>';
+    }
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+function renderPiano(){
+  const wrap=document.getElementById("pianoKeys");
+  const pcs=scalePitchClasses();
+  const whitePcs=[0,2,4,5,7,9,11];
+  const blackMap={1:0.7,3:1.7,6:3.7,8:4.7,10:5.7};
+  let html="",wx=0;
+  for(let o=0;o<2;o++){
+    whitePcs.forEach(pc=>{
+      const lbl=pcs.has(pc)?labelForPc(pc):null;
+      html+='<div class="pk-white" style="left:'+(wx*32)+'px" onclick="previewPianoKey('+pc+','+(4+o)+')">';
+      if(lbl)html+='<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;font-size:.55rem;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0a0810;pointer-events:none;background:'+intervalColor(lbl)+'">'+lbl+'</div>';
+      html+='</div>';wx++;
+    });
+  }
+  for(let o=0;o<2;o++){
+    Object.keys(blackMap).forEach(k=>{
+      const pc=parseInt(k,10);
+      const lbl=pcs.has(pc)?labelForPc(pc):null;
+      const leftPos=(o*7+blackMap[k])*32-10;
+      html+='<div class="pk-black" style="left:'+leftPos+'px" onclick="previewPianoKey('+pc+','+(4+o)+')">';
+      if(lbl)html+='<div style="position:absolute;top:42px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;font-size:.55rem;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0a0810;pointer-events:none;background:'+intervalColor(lbl)+'">'+lbl+'</div>';
+      html+='</div>';
+    });
+  }
+  wrap.innerHTML=html;
+}
+function previewPianoKey(pc,oct){
+  const ctx=getAudio();
+  const go=()=>playPianoMidi((oct+1)*12+pc,0.9,0.02,0.6);
+  if(ctx.state!=="running")ctx.resume().then(go).catch(go);else go();
+}
+
+/* ============================================================
+   8. CONTRÔLES + INIT
+   ============================================================ */
+function wireEvents(){
+  document.getElementById("styleFilter").addEventListener("change",e=>{
+    appState.styleFilter=e.target.value;populateProgSelect();
+    appState.progIdx=parseInt(document.getElementById("progSelect").value,10);onProgChange();
+  });
+  document.getElementById("progSelect").addEventListener("change",e=>{
+    appState.progIdx=parseInt(e.target.value,10);onProgChange();
+  });
+  document.getElementById("morpherRoot").addEventListener("change",e=>{
+    appState.morpherRoot=parseInt(e.target.value,10);
+    renderProgChords();
+    if(playing){stopPlayback();startPlayback();}
+  });
+  document.getElementById("grooveSelect").addEventListener("change",e=>{
+    appState.groove=e.target.value;refreshChugVisibility();
+    if(playing){stopPlayback();startPlayback();}
+  });
+  document.getElementById("chugSelect").addEventListener("change",e=>{
+    appState.chugTone=e.target.value;    if(playing){stopPlayback();startPlayback();}
+  });
+  const tsel=document.getElementById("tonaliteSel");
+  tsel.innerHTML='<option value="">— naturelle</option>'+NOTES.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join("");
+  tsel.addEventListener("change",e=>{
+    appState.targetKey=e.target.value===""?null:parseInt(e.target.value,10);
+    applyTonalite(true);
+  });
+  document.getElementById("bpmRange").addEventListener("input",e=>{
+    appState.bpm=parseInt(e.target.value,10);
+    document.getElementById("bpmVal").textContent=appState.bpm;
+  });
+  document.getElementById("exportTxt").addEventListener("click",exportText);
+  document.getElementById("exportDiag").addEventListener("click",exportDiagrams);
+  document.getElementById("toggleBtn").addEventListener("click",()=>{
+    if(playing)stopPlayback();else startPlayback();
+  });
+  document.getElementById("fretToggle").addEventListener("click",()=>{
+    const p=document.getElementById("fretPanel");
+    const shown=p.classList.toggle("shown");
+    document.getElementById("fretToggle").textContent=shown?"🎸 Masquer le manche":"🎸 Afficher le manche";
+    if(shown)renderFretboard();
+  });
+  document.getElementById("pianoToggle").addEventListener("click",()=>{
+    const p=document.getElementById("pianoPanel");
+    const shown=p.classList.toggle("shown");
+    document.getElementById("pianoToggle").textContent=shown?"🎹 Masquer le clavier":"🎹 Afficher le clavier (aperçu sonore)";
+    if(shown)renderPiano();
+  });
+  document.getElementById("rootSel").addEventListener("change",e=>{appState.rootPc=parseInt(e.target.value,10);renderFretboard();renderPiano();});
+  document.getElementById("familySel").addEventListener("change",e=>{
+    appState.familyKey=e.target.value;appState.modeIdx=0;populateModeSelect();renderFretboard();renderPiano();
+  });
+  document.getElementById("modeSel").addEventListener("change",e=>{appState.modeIdx=parseInt(e.target.value,10);renderFretboard();renderPiano();});
+}
+function populateModeSelect(){
+  const modeSel=document.getElementById("modeSel");
+  const modes=SCALES[appState.familyKey].modes;
+  modeSel.innerHTML=modes.map((m,i)=>'<option value="'+i+'">'+m.name+'</option>').join("");
+  appState.modeIdx=Math.min(appState.modeIdx,modes.length-1);
+  modeSel.value=appState.modeIdx;
+}
+/* ============================================================
+   ÉDITEUR "Mes grilles" — création/duplication/édition, manche
+   cliquable, persistance localStorage, fusion dans la bibliothèque
+   ============================================================ */
+const USER_KEY="am_user_progs_v1";
+let _editing=null;
+function _esc(s){return String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));}
+function loadUserProgs(){try{const a=JSON.parse(localStorage.getItem(USER_KEY));return Array.isArray(a)?a:[];}catch(e){return [];}}
+function saveUserProgs(a){try{localStorage.setItem(USER_KEY,JSON.stringify(a));}catch(e){alert("Sauvegarde impossible (stockage plein ?)");}}
+function syncUserIntoLibrary(){
+  for(let i=PROGRESSIONS.length-1;i>=0;i--)if(PROGRESSIONS[i].user)PROGRESSIONS.splice(i,1);
+  loadUserProgs().forEach(p=>PROGRESSIONS.push(Object.assign({style:"user",difficulty:2,feel:"Perso",description:"Grille personnelle."},p,{user:true})));
+}
+function validVoicing(v){const p=String(v).split("-");if(p.length!==6)return false;return p.every(t=>t==="x"||t==="X"||(/^\d+$/.test(t)&&+t>=0&&+t<=16));}
+function openMes(){document.getElementById("mesModal").style.display="flex";renderMesList();}
+function closeMes(){document.getElementById("mesModal").style.display="none";}
+function renderMesList(){
+  const arr=loadUserProgs();const el=document.getElementById("mesList");
+  if(!arr.length){el.innerHTML='<div style="opacity:.6;padding:10px">Aucune grille perso pour l\'instant. Crée-en une, ou duplique la grille en cours.</div>';return;}
+  el.innerHTML=arr.map(p=>'<div class="mes-item"><b>'+_esc(p.name)+'</b> <span style="opacity:.6">('+p.chords.length+' accords · '+p.tempo+' bpm · '+(GROOVES[p.groove]?GROOVES[p.groove].label:p.groove)+')</span>'+
+    '<div class="mes-actions"><button data-act="load" data-id="'+p.id+'">▶ Charger</button>'+
+    '<button data-act="edit" data-id="'+p.id+'">✏️ Éditer</button>'+
+    '<button data-act="del" data-id="'+p.id+'">🗑️ Supprimer</button></div></div>').join("");
+}
+function newProg(){_editing={id:"user-"+Date.now(),name:"Ma grille",tempo:100,groove:"rock",chords:[{name:"Am",beats:4,voicing:"x-0-2-2-1-0",bassGuide:""}]};openEdit();}
+function dupCurrent(){const p=currentProg();_editing={id:"user-"+Date.now(),name:(p.name||"Grille")+" (copie)",tempo:p.tempo||100,groove:appState.groove,chords:progChords(p).map(c=>({name:c.name,beats:c.beats,voicing:c.voicing,bassGuide:c.bassGuide||""}))};openEdit();}
+function editProg(id){const p=loadUserProgs().find(x=>x.id===id);if(!p)return;_editing=JSON.parse(JSON.stringify(p));openEdit();}
+function delProg(id){if(!confirm("Supprimer cette grille définitivement ?"))return;saveUserProgs(loadUserProgs().filter(x=>x.id!==id));syncUserIntoLibrary();populateProgSelect();renderMesList();}
+function loadUserProg(id){syncUserIntoLibrary();const i=PROGRESSIONS.findIndex(p=>p.id===id);if(i>=0){closeMes();loadAndPlay(i);}}
+function openEdit(){
+  closeMes();
+  document.getElementById("editModal").style.display="flex";
+  document.getElementById("edName").value=_editing.name;
+  document.getElementById("edTempo").value=_editing.tempo;
+  const gs=document.getElementById("edGroove");
+  gs.innerHTML=Object.keys(GROOVES).map(k=>'<option value="'+k+'">'+GROOVES[k].label+'</option>').join("");
+  gs.value=_editing.groove;
+  renderEditChords();
+}
+function closeEdit(){document.getElementById("editModal").style.display="none";_editing=null;}
+function renderEditChords(){
+  const el=document.getElementById("editChords");
+  el.innerHTML=_editing.chords.map((c,i)=>
+    '<div class="ed-chord"><input class="ed-cn" data-i="'+i+'" value="'+_esc(c.name)+'" placeholder="Nom">'+
+    '<input class="ed-cb" data-i="'+i+'" type="number" min="1" max="32" value="'+c.beats+'"> temps'+
+    '<button class="ed-voic" data-i="'+i+'">🎸 '+_esc(c.voicing)+'</button>'+
+    '<button class="ed-del" data-i="'+i+'">✕</button></div>').join("");
+  const pk=document.getElementById("fretPicker");pk.style.display="none";pk.innerHTML="";
+}
+function openFretPicker(i){
+  const c=_editing.chords[i];
+  const frets=(c.voicing||"x-x-x-x-x-x").split("-");
+  const labels=["Mi grave","La","Ré","Sol","Si","Mi aigu"];
+  let h='<div class="fp-title">Accord '+(i+1)+' — clique une case (ou ✕) par corde</div>';
+  for(let s=0;s<6;s++){
+    h+='<div class="fp-row"><span class="fp-lab">'+labels[s]+'</span><div class="fp-lane">';
+    h+='<button class="fp-b'+(String(frets[s]).toLowerCase()==="x"?" on":"")+'" data-s="'+s+'" data-f="x">✕</button>';
+    for(let f=0;f<=16;f++)h+='<button class="fp-b'+(String(frets[s])===String(f)?" on":"")+'" data-s="'+s+'" data-f="'+f+'">'+f+'</button>';
+    h+='</div></div>';
+  }
+  h+='<div class="fp-live" id="fpLive"></div><button id="fpPlay">▶ Écouter</button><button id="fpDone">OK</button>';
+  const pk=document.getElementById("fretPicker");pk.innerHTML=h;pk.style.display="block";pk.dataset.ci=i;
+  const midi=parseVoicing(c.voicing);
+  document.getElementById("fpLive").textContent=c.voicing+"   →   "+midi.map(m=>_TSHARP[((m%12)+12)%12]).join(" ");
+}
+function saveEdit(){
+  _editing.name=(document.getElementById("edName").value||"").trim()||"Grille";
+  _editing.tempo=Math.max(40,Math.min(240,parseInt(document.getElementById("edTempo").value,10)||100));
+  _editing.groove=document.getElementById("edGroove").value;
+  if(!_editing.chords.length){alert("Ajoute au moins un accord.");return;}
+  for(const c of _editing.chords){
+    if(!validVoicing(c.voicing)){alert("Voicing invalide sur « "+c.name+" » : "+c.voicing);return;}
+    c.beats=Math.max(1,Math.min(32,parseInt(c.beats,10)||4));
+    if(!String(c.name).trim())c.name="?";
+    c.bassGuide=c.bassGuide||"";
+  }
+  const arr=loadUserProgs();const idx=arr.findIndex(x=>x.id===_editing.id);
+  const rec={id:_editing.id,name:_editing.name,tempo:_editing.tempo,groove:_editing.groove,chords:_editing.chords};
+  if(idx>=0)arr[idx]=rec;else arr.push(rec);
+  saveUserProgs(arr);syncUserIntoLibrary();populateProgSelect();
+  closeEdit();openMes();
+}
+function wireEditor(){
+  document.getElementById("mesGrillesOpen").addEventListener("click",openMes);
+  document.getElementById("mesClose").addEventListener("click",closeMes);
+  document.getElementById("mesModal").addEventListener("click",e=>{if(e.target.id==="mesModal")closeMes();});
+  document.getElementById("mesNew").addEventListener("click",newProg);
+  document.getElementById("mesDup").addEventListener("click",dupCurrent);
+  document.getElementById("mesList").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-act]");if(!b)return;
+    const id=b.dataset.id;({load:loadUserProg,edit:editProg,del:delProg}[b.dataset.act])(id);
+  });
+  document.getElementById("edClose").addEventListener("click",closeEdit);
+  document.getElementById("edCancel").addEventListener("click",closeEdit);
+  document.getElementById("edSave").addEventListener("click",saveEdit);
+  document.getElementById("edAddChord").addEventListener("click",()=>{_editing.chords.push({name:"C",beats:4,voicing:"x-3-2-0-1-0",bassGuide:""});renderEditChords();});
+  document.getElementById("editChords").addEventListener("input",e=>{
+    const i=+e.target.dataset.i;if(isNaN(i))return;
+    if(e.target.classList.contains("ed-cn"))_editing.chords[i].name=e.target.value;
+    else if(e.target.classList.contains("ed-cb"))_editing.chords[i].beats=e.target.value;
+  });
+  document.getElementById("editChords").addEventListener("click",e=>{
+    const v=e.target.closest(".ed-voic"),d=e.target.closest(".ed-del");
+    if(v)openFretPicker(+v.dataset.i);
+    else if(d){_editing.chords.splice(+d.dataset.i,1);renderEditChords();}
+  });
+  document.getElementById("fretPicker").addEventListener("click",e=>{
+    const pk=document.getElementById("fretPicker");const i=+pk.dataset.ci;
+    const b=e.target.closest(".fp-b");
+    if(b){const parts=(_editing.chords[i].voicing||"x-x-x-x-x-x").split("-");parts[+b.dataset.s]=b.dataset.f;_editing.chords[i].voicing=parts.join("-");openFretPicker(i);return;}
+    if(e.target.id==="fpPlay"){parseVoicing(_editing.chords[i].voicing).forEach((m,k)=>playGuitarMidi(m,0.8,0.03+k*0.03,0.7));return;}
+    if(e.target.id==="fpDone"){pk.style.display="none";renderEditChords();return;}
+  });
+}
+function init(){
+  document.getElementById("rootSel").innerHTML=NOTES.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join("");
+  document.getElementById("morpherRoot").innerHTML=NOTES.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join("");
+  document.getElementById("familySel").innerHTML=Object.keys(SCALES).map(k=>'<option value="'+k+'">'+SCALES[k].name+'</option>').join("");
+  populateModeSelect();
+  document.getElementById("grooveSelect").innerHTML=Object.keys(GROOVES).map(k=>'<option value="'+k+'">'+GROOVES[k].label+'</option>').join("");
+  document.getElementById("chugSelect").innerHTML=Object.keys(CHUG_TONES).map(k=>'<option value="'+k+'">'+CHUG_TONES[k].label+'</option>').join("");
+  syncUserIntoLibrary();
+  populateLibrary();
+  wireEvents();
+  wireStarter();
+  wireMetal();
+  wireEditor();
+  onProgChange();
+  openStarter(); // la modale accueille au lancement
+}
+init();
+</script>
+</body>
+</html>
