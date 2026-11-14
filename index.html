@@ -23,6 +23,12 @@ a.app:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .app span.d{display:block;color:var(--mute);font-size:.88rem;line-height:1.35}
 .go{margin-left:auto;color:var(--mute);font-size:1.3rem}
 .note{color:var(--mute);font-size:.85rem;margin-top:28px}
+details.arch{margin-top:30px}
+details.arch summary{cursor:pointer;list-style:none;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:6px 2px}
+details.arch summary::-webkit-details-marker{display:none}
+details.arch summary::after{content:" ▸"}details.arch[open] summary::after{content:" ▾"}
+details.arch .sub2{color:var(--mute);font-size:.85rem;margin:2px 2px 10px}
+details.arch a.app{opacity:.72}
 </style>
 </head>
 <body>
@@ -33,10 +39,6 @@ a.app:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <h2>Guitare et musique</h2>
 <div class="list">
   <a class="app" href="/Guitar-Modal-Morpher/"><span class="ico">🎸</span><span><b>Guitar Modal Morpher</b><span class="d">Modes, grilles d'accords à jouer avec accompagnement, manche et improvisation.</span></span><span class="go">›</span></a>
-  <a class="app" href="/guitar-modes/"><span class="ico">🎼</span><span><b>GuitarModes</b><span class="d">Outil de composition : modes, 122 grilles jouées avec batterie, basse, guitare et piano, palette de recherche.</span></span><span class="go">›</span></a>
-  <a class="app" href="/accompagnement/"><span class="ico">🎹</span><span><b>Accompagnement Modal</b><span class="d">Section rythmique : 143 grilles par niveau et par style, jouées avec batterie, basse et guitare.</span></span><span class="go">›</span></a>
-  <a class="app" href="/drummod/"><span class="ico">🥁</span><span><b>DRUMMOD</b><span class="d">Boîte à rythmes : séquenceur électro et acoustique, basse TB-303, drone et métronome.</span></span><span class="go">›</span></a>
-  <a class="app" href="/teuf-live/"><span class="ico">🎛️</span><span><b>TEUF/// LIVE</b><span class="d">Boîte à rythmes live : 8 pistes, cycles libres, basse, nappe et table de mixage.</span></span><span class="go">›</span></a>
   <a class="app" href="/solfege/"><span class="ico">♩</span><span><b>Solfège et théorie</b><span class="d">Lire la portée et le manche, intervalles, accords, gammes, modes, rythme.</span></span><span class="go">›</span></a>
 </div>
 
@@ -44,6 +46,17 @@ a.app:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <div class="list">
   <a class="app" href="/Sol/"><span class="ico">🤸</span><span><b>Sol</b><span class="d">Callisthénie au poids du corps : programme de 28 jours, séances guidées, étirements, grand écart.</span></span><span class="go">›</span></a>
 </div>
+
+<details class="arch">
+<summary>Archives</summary>
+<p class="sub2">Les premières applis, gardées pour mémoire. Elles fonctionnent toujours, mais le Morpher a repris l'essentiel.</p>
+<div class="list">
+  <a class="app" href="/guitar-modes/"><span class="ico">🎼</span><span><b>GuitarModes</b><span class="d">Outil de composition : modes, 122 grilles jouées avec batterie, basse, guitare et piano, palette de recherche.</span></span><span class="go">›</span></a>
+  <a class="app" href="/accompagnement/"><span class="ico">🎹</span><span><b>Accompagnement Modal</b><span class="d">Section rythmique : 143 grilles par niveau et par style, jouées avec batterie, basse et guitare.</span></span><span class="go">›</span></a>
+  <a class="app" href="/drummod/"><span class="ico">🥁</span><span><b>DRUMMOD</b><span class="d">Boîte à rythmes : séquenceur électro et acoustique, basse TB-303, drone et métronome.</span></span><span class="go">›</span></a>
+  <a class="app" href="/teuf-live/"><span class="ico">🎛️</span><span><b>TEUF/// LIVE</b><span class="d">Boîte à rythmes live : 8 pistes, cycles libres, basse, nappe et table de mixage.</span></span><span class="go">›</span></a>
+</div>
+</details>
 
 <p class="note">Astuce : dans Chrome, menu ⋮ puis « Ajouter à l'écran d'accueil » pour garder une appli comme une icône.</p>
 </main>
