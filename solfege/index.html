@@ -4443,5 +4443,45 @@ function route(){
 window.addEventListener("hashchange",route);
 route();
 </script>
+<!-- install-hint v1 -->
+<script>
+(function(){
+  if(window.top!==window) return;
+  var standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  if(standalone) return;
+  var KEY="installHintOff:"+location.pathname;
+  try{ if(localStorage.getItem(KEY)) return; }catch(e){}
+  var ua=navigator.userAgent||"";
+  var ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  var inApp=/FBAN|FBAV|Instagram|Snapchat|Line\/|MicroMessenger|TikTok|; wv\)/.test(ua)||(ios&&!/Safari/.test(ua));
+  var box=null, deferred=null;
+  function off(){ try{localStorage.setItem(KEY,"1");}catch(e){} hide(); }
+  function hide(){ if(box){box.remove(); box=null;} }
+  function show(text,withBtn){
+    hide();
+    box=document.createElement("div");
+    box.setAttribute("role","dialog"); box.setAttribute("aria-label","Installer l’appli");
+    box.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);width:max-content;padding:10px 10px 10px 16px;border-radius:16px;background:#1F2630;color:#F2F4F7;font:500 15px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12)";
+    var t=document.createElement("span"); t.textContent=text; box.appendChild(t);
+    if(withBtn){
+      var b=document.createElement("button"); b.type="button"; b.textContent="Installer";
+      b.style.cssText="flex:none;border:0;border-radius:11px;padding:10px 14px;background:#8AA2FF;color:#0D1320;font:700 15px system-ui,sans-serif;cursor:pointer";
+      b.onclick=function(){ if(!deferred) return hide(); deferred.prompt(); deferred.userChoice.then(function(r){ if(r&&r.outcome==="accepted") off(); else hide(); deferred=null; }); };
+      box.appendChild(b);
+    }
+    var x=document.createElement("button"); x.type="button"; x.textContent="×"; x.setAttribute("aria-label","Ne plus afficher");
+    x.style.cssText="flex:none;border:0;background:none;color:#AAB4C0;font:400 26px/1 system-ui,sans-serif;padding:4px 8px;cursor:pointer";
+    x.onclick=off; box.appendChild(x);
+    (document.body||document.documentElement).appendChild(box);
+  }
+  window.addEventListener("beforeinstallprompt",function(e){ e.preventDefault(); deferred=e; show("Installer l’appli sur ton téléphone ?",true); });
+  window.addEventListener("appinstalled",off);
+  function later(){
+    if(inApp) show(ios?"Pour l’installer, ouvre cette page dans Safari (menu ⋯ → Ouvrir dans Safari).":"Pour l’installer, ouvre cette page dans Chrome (menu ⋮ → Ouvrir dans Chrome).",false);
+    else if(ios) show("Pour l’installer : bouton Partager, puis « Sur l’écran d’accueil ».",false);
+  }
+  setTimeout(function(){ if(!deferred&&!box) later(); },2500);
+})();
+</script>
 </body>
 </html>
